@@ -1,0 +1,79 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Información del usuario y su estado de aprobación.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "ID único de Firebase Auth." },
+        "email": { "type": "string", "format": "email", "description": "Correo electrónico del usuario." },
+        "displayName": { "type": "string", "description": "Nombre visible." },
+        "photoURL": { "type": "string", "description": "URL de la foto de perfil." },
+        "role": { "type": "string", "enum": ["admin", "student"], "description": "Rol del usuario." },
+        "status": { "type": "string", "enum": ["pending", "approved"], "description": "Estado de aprobación por el profesor." },
+        "projectId": { "type": "string", "description": "ID del proyecto al que pertenece." }
+      },
+      "required": ["uid", "email", "role", "status"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "Datos completos del proyecto de restauración sostenible.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "ID único del proyecto." },
+        "code": { "type": "string", "description": "Código de acceso único (6 caracteres)." },
+        "name": { "type": "string", "description": "Nombre del proyecto." },
+        "createdBy": { "type": "string", "description": "UID del creador." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Fecha de creación." },
+        "schoolName": { "type": "string", "description": "Nombre del centro educativo." },
+        "schoolLogo": { "type": "string", "description": "Logo del centro en base64." },
+        "academicYear": { "type": "string", "description": "Curso académico." },
+        "teamName": { "type": "string", "description": "Nombre del equipo." },
+        "groupPhoto": { "type": "string", "description": "Foto del equipo en base64." },
+        "selectedZone": { "type": "object", "description": "Zona gastronómica seleccionada." },
+        "zoneJustification": { "type": "string", "description": "Justificación de la zona." },
+        "task2": { "type": "object", "description": "Micro-tareas de análisis asignadas." },
+        "concept": { "type": "object", "description": "Nombre, slogan y valores del restaurante." },
+        "missions": { "type": "object", "description": "Misiones individuales (Explorer, Connector, Guardian)." },
+        "dishes": { "type": "array", "items": { "type": "object" }, "description": "Escandallos y fichas técnicas de los platos." },
+        "menuPrototype": { "type": "object", "description": "Prototipo de carta física y digital." },
+        "task6": { "type": "object", "description": "Roles asignados para el ensamblaje final." },
+        "team": { "type": "array", "items": { "type": "object" }, "description": "Lista de miembros del equipo y coordinadores." },
+        "isTeamClosed": { "type": "boolean", "description": "Si el equipo ha sido cerrado por el coordinador." },
+        "seasonalProducts": { "type": "array", "items": { "type": "object" }, "description": "Aportaciones individuales de productos de temporada." },
+        "coEvaluations": { "type": "array", "items": { "type": "object" }, "description": "Votos de la coevaluación diabólica." },
+        "interimReport": { "type": "object", "description": "Memoria intermedia y análisis de viabilidad." },
+        "checklist": { "type": "array", "items": { "type": "object" }, "description": "Estado de progreso de los hitos del proyecto." }
+      },
+      "required": ["id", "code", "createdBy"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Registro de acciones realizadas, especialmente por administradores.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "UID del usuario que realizó la acción." },
+        "action": { "type": "string", "description": "Descripción de la acción." },
+        "timestamp": { "type": "integer", "description": "Timestamp de la acción." },
+        "changesJson": { "type": "string", "description": "Detalle de los cambios en formato JSON." },
+        "projectId": { "type": "string", "description": "ID del proyecto afectado." },
+        "impersonatedUserId": { "type": "string", "description": "UID del usuario suplantado (si aplica)." }
+      },
+      "required": ["userId", "action", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "Colección de perfiles de usuario."
+    },
+    "/projects/{projectId}": {
+      "schema": "Project",
+      "description": "Colección de proyectos activos."
+    },
+    "/audit_logs/{logId}": {
+      "schema": "AuditLog",
+      "description": "Registro de auditoría global."
+    }
+  }
+}

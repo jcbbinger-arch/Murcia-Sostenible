@@ -1,0 +1,151 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Global Deny
+    // ===============================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ===============================================================
+    // Helper Functions (Primitives)
+    // ===============================================================
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Role-based access using Master Gate pattern
+    function getUserData(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email.lower() in ["juan.codina@murciaeduca.es", "jcbbinger@gmail.com"] ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         getUserData(request.auth.uid).role == 'admin' && 
+         getUserData(request.auth.uid).status != 'suspended')
+      );
+    }
+
+    function isAssistant() {
+      return isSignedIn() && (
+        isAdmin() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         getUserData(request.auth.uid).role == 'assistant' && 
+         getUserData(request.auth.uid).status != 'suspended')
+      );
+    }
+
+    function isApproved() {
+      return isSignedIn() && (
+        isAssistant() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         getUserData(request.auth.uid).status == 'approved')
+      );
+    }
+
+    function isProjectMember(projectId) {
+      return isSignedIn() && (
+        isAssistant() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         getUserData(request.auth.uid).projectId == projectId)
+      );
+    }
+
+    // ===============================================================
+    // Validation Blueprints
+    // ===============================================================
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'role', 'status']) &&
+             data.uid is string && data.uid.size() <= 128 &&
+             data.email is string && data.email.size() <= 256 &&
+             data.role in ['admin', 'student', 'assistant'] &&
+             data.status in ['pending', 'approved', 'suspended'];
+    }
+
+    function isValidProject(data) {
+      return data.keys().hasAll(['id', 'code', 'createdBy']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.code is string && data.code.size() == 6 &&
+             data.createdBy is string && data.createdBy.size() <= 128;
+    }
+
+    function isValidAuditLog(data) {
+      return data.keys().hasAll(['userId', 'action', 'timestamp']) &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.action is string && data.action.size() <= 512 &&
+             (data.timestamp is timestamp || data.timestamp == request.time);
+    }
+
+    // ===============================================================
+    // Match Rules
+    // ===============================================================
+
+    // Users Collection
+    match /users/{uid} {
+      allow get: if isSignedIn() && (isOwner(uid) || isAssistant());
+      allow list: if isAssistant();
+      
+      allow create: if isSignedIn() && isOwner(uid) && 
+                      isValidUser(incoming()) && 
+                      incoming().role == 'student' && 
+                      incoming().status == 'pending';
+      
+      allow update: if isSignedIn() && (
+        // Root Admins
+        request.auth.token.email.lower() in ["juan.codina@murciaeduca.es", "jcbbinger@gmail.com"] ||
+        // Assistant/Admin management
+        (isAssistant() && existing().email.lower() != "juan.codina@murciaeduca.es" && isValidUser(incoming())) ||
+        // User updating their own profile (limited fields)
+        (isOwner(uid) && isValidUser(incoming()) && 
+         incoming().diff(existing()).affectedKeys().hasOnly(['projectId', 'displayName', 'photoURL', 'impersonatingUid', 'lastLogin']))
+      );
+      
+      allow delete: if isAdmin() && existing().email.lower() != "juan.codina@murciaeduca.es";
+    }
+
+    // Projects Collection
+    match /projects/{projectId} {
+      allow get: if isApproved();
+      // Required for joining by code
+      allow list: if isSignedIn(); 
+      
+      allow create: if isApproved() && isValidProject(incoming());
+      
+      allow update: if isApproved() && (
+        isAssistant() || 
+        (isProjectMember(projectId) && isValidProject(incoming()))
+      );
+      
+      allow delete: if isAdmin();
+    }
+
+    // Audit Logs Collection
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn() && isValidAuditLog(incoming());
+      allow update, delete: if false;
+    }
+  }
+}

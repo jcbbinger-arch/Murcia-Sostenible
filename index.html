@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Murcia Sostenible - Gestor de Proyecto</title>
+    <!-- Global Error Handler -->
+    <script>
+      window.onerror = function(message, source, lineno, colno, error) {
+        var errorDiv = document.createElement('div');
+        errorDiv.style.position = 'fixed';
+        errorDiv.style.top = '0';
+        errorDiv.style.left = '0';
+        errorDiv.style.width = '100%';
+        errorDiv.style.backgroundColor = '#fee2e2';
+        errorDiv.style.color = '#991b1b';
+        errorDiv.style.padding = '20px';
+        errorDiv.style.zIndex = '9999';
+        errorDiv.style.fontFamily = 'monospace';
+        errorDiv.style.borderBottom = '2px solid #7f1d1d';
+        errorDiv.innerHTML = '<strong>Error de Aplicación:</strong><br/>' + message;
+        document.body.appendChild(errorDiv);
+        console.error("Global Catch:", error);
+      };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      body { font-family: 'Inter', sans-serif; }
+      
+      /* ACADEMIC PRINT STYLES - OPTIMIZED */
+      @media print {
+        @page { 
+            margin: 1.5cm;
+            size: A4; 
+        }
+        
+        body { 
+            background-color: white !important;
+            -webkit-print-color-adjust: exact !important; 
+            print-color-adjust: exact !important; 
+            font-size: 11pt; /* Professional standard */
+            color: black;
+        }
+
+        /* Hide UI elements */
+        .no-print, nav, aside, button, .gemini-chat-widget, .hide-in-print { 
+            display: none !important; 
+        }
+
+        /* Layout Utilities for Print */
+        .break-after-page { break-after: page; page-break-after: always; }
+        .break-before-page { break-before: page; page-break-before: always; }
+        .break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
+        
+        /* Ensure containers take full width/height as needed */
+        #root, main { 
+            width: 100% !important; 
+            margin: 0 !important; 
+            padding: 0 !important; 
+            display: block; 
+        }
+
+        /* Professional Borders */
+        table, th, td { border-color: #000 !important; }
+        .border, .border-2, .border-b, .border-t { border-color: #000 !important; }
+
+        /* Links */
+        a { text-decoration: none !important; color: black !important; }
+        
+        /* Reset Counters */
+        body { counter-reset: figCount tabCount; }
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.12.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-gray-50 text-gray-900">
+    <div id="root">
+        <div style="display:flex;justify-content:center;align-items:center;height:100vh;flex-direction:column;font-family:sans-serif;color:#666;">
+            <div style="margin-bottom:20px;width:40px;height:40px;border:4px solid #ddd;border-top-color:#16a34a;border-radius:50%;animation:spin 1s linear infinite;"></div>
+            <p>Cargando Murcia Sostenible...</p>
+        </div>
+        <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+    </div>
+    <script type="module" src="./index.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
