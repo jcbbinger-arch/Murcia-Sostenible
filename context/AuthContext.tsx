@@ -13,7 +13,9 @@ import {
   setDoc, 
   updateDoc,
   onSnapshot,
-  FirebaseUser
+  FirebaseUser,
+  OperationType,
+  handleFirestoreError
 } from '../firebase';
 
 interface UserProfile {
@@ -85,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               if (isAdminEmail) {
                 if (data.role !== 'admin' || data.status !== 'approved') {
                   const updatedProfile = { ...data, role: 'admin' as const, status: 'approved' as const };
-                  updateDoc(userRef, updatedProfile).catch(err => console.error("Error forcing admin role:", err));
+                  updateDoc(userRef, updatedProfile).catch(err => handleFirestoreError(err, OperationType.UPDATE, `users/${firebaseUser.uid}`));
                   setRealProfile(updatedProfile);
                 } else {
                   setRealProfile(data);
@@ -103,6 +105,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   } else {
                     setImpersonatedProfile(null);
                   }
+                }, (error) => {
+                  handleFirestoreError(error, OperationType.GET, `users/${data.impersonatingUid}`);
                 });
               } else {
                 setImpersonatedProfile(null);
@@ -130,12 +134,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 await setDoc(userRef, newProfile);
                 setRealProfile(newProfile);
               } catch (err) {
-                console.error("Error creating profile:", err);
+                handleFirestoreError(err, OperationType.CREATE, `users/${firebaseUser.uid}`);
               }
               setLoading(false);
             }
           }, (error) => {
-            console.error("Profile Snapshot Error:", error);
+            handleFirestoreError(error, OperationType.GET, `users/${firebaseUser.uid}`);
             setLoading(false);
           });
         } catch (err) {
@@ -168,17 +172,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userRef = doc(db, 'users', realProfile.uid);
       if (targetUid) {
         // Obtener el projectId del usuario a suplantar
-        const targetSnap = await getDoc(doc(db, 'users', targetUid));
+        const targetSnap = await getDoc(doc(db, 'users', targetUid)).catch(err => {
+          handleFirestoreError(err, OperationType.GET, `users/${targetUid}`);
+          throw err;
+        });
         const targetData = targetSnap.data() as UserProfile;
         
         await updateDoc(userRef, { 
           impersonatingUid: targetUid,
           projectId: targetData.projectId || null
+        }).catch(err => {
+          handleFirestoreError(err, OperationType.UPDATE, `users/${realProfile.uid}`);
+          throw err;
         });
       } else {
         await updateDoc(userRef, { 
           impersonatingUid: null,
           projectId: null 
+        }).catch(err => {
+          handleFirestoreError(err, OperationType.UPDATE, `users/${realProfile.uid}`);
+          throw err;
         });
       }
     } catch (error) {
@@ -207,14 +220,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await updateDoc(doc(db, 'users', realProfile.uid), data);
     } catch (error) {
-      console.error("Error updating profile:", error);
+      handleFirestoreError(error, OperationType.UPDATE, `users/${realProfile.uid}`);
     }
   };
 
   const setAdminEditMode = (value: boolean) => {
     _setAdminEditMode(value);
     if (realProfile?.uid) {
-      updateDoc(doc(db, 'users', realProfile.uid), { adminEditMode: value }).catch(console.error);
+      updateDoc(doc(db, 'users', realProfile.uid), { adminEditMode: value }).catch(err => {
+        handleFirestoreError(err, OperationType.UPDATE, `users/${realProfile.uid}`);
+      });
     }
   };
 

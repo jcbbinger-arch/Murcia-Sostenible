@@ -2,7 +2,19 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { ProjectState, Zone, Dish, TeamMember, MenuPrototype, Task6Roles, PeerReview, SeasonalProductContribution, ChecklistStatus } from '../types';
 import { INITIAL_STATE, INITIAL_CHECKLIST } from '../constants';
-import { db, doc, onSnapshot, updateDoc, setDoc, collection, query, where, getDocs } from '../firebase';
+import { 
+  db, 
+  doc, 
+  onSnapshot, 
+  updateDoc, 
+  setDoc, 
+  collection, 
+  query, 
+  where, 
+  getDocs,
+  OperationType,
+  handleFirestoreError
+} from '../firebase';
 import { useAuth } from './AuthContext';
 
 interface ProjectContextType {
@@ -131,6 +143,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         remoteUpdateInProgress.current = false;
       }
       setLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, `projects/${profile.projectId}`);
+      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -152,7 +167,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         const { id, code, createdBy, createdAt, ...dataToSync } = state;
         await updateDoc(projectRef, dataToSync as any);
       } catch (error) {
-        console.error("Error syncing with Firestore:", error);
+        handleFirestoreError(error, OperationType.UPDATE, `projects/${profile.projectId}`);
       }
     }, 1000);
 
@@ -182,8 +197,14 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       team: [creatorMember]
     };
 
-    await setDoc(doc(db, 'projects', projectId), newProject);
-    await updateDoc(doc(db, 'users', user.uid), { projectId });
+    await setDoc(doc(db, 'projects', projectId), newProject).catch(err => {
+      handleFirestoreError(err, OperationType.CREATE, `projects/${projectId}`);
+      throw err;
+    });
+    await updateDoc(doc(db, 'users', user.uid), { projectId }).catch(err => {
+      handleFirestoreError(err, OperationType.UPDATE, `users/${user.uid}`);
+      throw err;
+    });
     
     return code;
   };
@@ -192,7 +213,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (!user) throw new Error("Debes iniciar sesión");
     
     const q = query(collection(db, 'projects'), where('code', '==', code.toUpperCase()));
-    const querySnapshot = await getDocs(q);
+    const querySnapshot = await getDocs(q).catch(err => {
+      handleFirestoreError(err, OperationType.LIST, 'projects');
+      throw err;
+    });
     
     if (querySnapshot.empty) {
       throw new Error("Código de proyecto inválido");
@@ -203,7 +227,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     
     // Solo actualizamos el perfil del usuario para vincularlo al proyecto
     // La identificación con un miembro del equipo se hará en el Dashboard
-    await updateDoc(doc(db, 'users', user.uid), { projectId });
+    await updateDoc(doc(db, 'users', user.uid), { projectId }).catch(err => {
+      handleFirestoreError(err, OperationType.UPDATE, `users/${user.uid}`);
+      throw err;
+    });
   };
 
   const claimTeamMember = async (tempId: string) => {
@@ -265,6 +292,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       coEvaluations: updatedCoEvaluations,
       seasonalProducts: updatedSeasonalProducts,
       checklist: updatedChecklist
+    }).catch(err => {
+      handleFirestoreError(err, OperationType.UPDATE, `projects/${profile.projectId}`);
+      throw err;
     });
     
     setState(prev => ({ 
@@ -291,7 +321,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     };
 
     const newTeam = [...state.team, newMember];
-    await updateDoc(doc(db, 'projects', profile.projectId), { team: newTeam });
+    await updateDoc(doc(db, 'projects', profile.projectId), { team: newTeam }).catch(err => {
+      handleFirestoreError(err, OperationType.UPDATE, `projects/${profile.projectId}`);
+      throw err;
+    });
     setState(prev => ({ ...prev, team: newTeam, currentUser: user.uid }));
   };
 

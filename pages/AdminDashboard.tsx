@@ -84,18 +84,24 @@ export const AdminDashboard: React.FC = () => {
     const qAllUsers = query(collection(db, 'users'));
     const unsubAllUsers = onSnapshot(qAllUsers, (snapshot) => {
       setAllUsers(snapshot.docs.map(d => d.data() as UserProfile));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'users');
     });
 
     // Listen to pending users
     const qPending = query(collection(db, 'users'), where('status', '==', 'pending'));
     const unsubPending = onSnapshot(qPending, (snapshot) => {
       setPendingUsers(snapshot.docs.map(d => d.data() as UserProfile));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'users');
     });
 
     // Listen to all projects
     const qProjects = collection(db, 'projects');
     const unsubProjects = onSnapshot(qProjects, (snapshot) => {
       setAllProjects(snapshot.docs.map(d => d.data() as ProjectSummary));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'projects');
     });
 
     // Listen to audit logs
@@ -103,6 +109,8 @@ export const AdminDashboard: React.FC = () => {
     const unsubAudit = onSnapshot(qAudit, (snapshot) => {
       const logs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as AuditLog));
       setAuditLogs(logs.sort((a, b) => b.timestamp?.seconds - a.timestamp?.seconds));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'audit_logs');
     });
 
     return () => {
@@ -166,6 +174,9 @@ export const AdminDashboard: React.FC = () => {
         await updateDoc(doc(db, 'users', realProfile.uid), { 
           projectId,
           impersonatingUid: null // Limpiamos suplantación previa si la había
+        }).catch(err => {
+          handleFirestoreError(err, OperationType.UPDATE, `users/${realProfile.uid}`);
+          throw err;
         });
         logAction('ADMIN_ENTER_PROJECT', { projectId, memberId });
       }
@@ -211,16 +222,22 @@ export const AdminDashboard: React.FC = () => {
         updateDoc(doc(db, 'users', u.uid), { 
           projectId: null,
           status: 'approved' // Keep them approved but free
+        }).catch(err => {
+          handleFirestoreError(err, OperationType.UPDATE, `users/${u.uid}`);
+          throw err;
         })
       );
       
       await Promise.all(resetPromises);
       
       // 2. Delete the project document
-      await deleteDoc(doc(db, 'projects', projectId));
+      await deleteDoc(doc(db, 'projects', projectId)).catch(err => {
+        handleFirestoreError(err, OperationType.DELETE, `projects/${projectId}`);
+        throw err;
+      });
       logAction('PROJECT_DELETED', { projectId });
     } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `projects/${projectId}`);
+      console.error("Error deleting project:", error);
     }
   };
 

@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { LogIn, ShieldCheck, Users, Globe, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
+import { LogIn, ShieldCheck, Globe, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
+import { auth } from '../firebase';
 
 export const Login: React.FC = () => {
   const { login, loginWithRedirect } = useAuth();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  const isIframe = window.location !== window.parent.location;
 
   const handleLogin = async () => {
     setError(null);
@@ -16,15 +19,23 @@ export const Login: React.FC = () => {
     } catch (err: any) {
       console.error("Login Error:", err);
       setIsLoggingIn(false);
-      if (err.code === 'auth/popup-blocked') {
-        setError("El navegador bloqueó la ventana. Prueba el botón 'Entrar por Redirección' de abajo.");
-      } else if (err.code === 'auth/unauthorized-domain') {
-        setError("Dominio no autorizado. Asegúrate de añadir este dominio en la consola de Firebase.");
-      } else {
-        setError("Error al iniciar sesión. Prueba el método de Redirección.");
-      }
+      
+    const domain = window.location.hostname;
+    const authDomain = auth.app.options.authDomain;
+
+    if (err.code === 'auth/popup-blocked') {
+      setError(`El navegador bloqueó la ventana emergente. Prueba el botón 'Entrar por Redirección' o pulsa 'Abrir en pestaña nueva'.`);
+    } else if (err.code === 'auth/unauthorized-domain' || (err.message && err.message.includes('unauthorized domain'))) {
+      setError(`DOMINIO NO AUTORIZADO: Debes añadir "${domain}" y "${authDomain}" en la consola de Firebase.`);
+    } else if (err.code === 'auth/popup-closed-by-user') {
+      setError("Cerraste la ventana de Google antes de terminar.");
+    } else if (err.code === 'auth/internal-error' || err.code === 'auth/network-request-failed') {
+      setError("Error de red o configuración de Firebase. Revisa tu conexión y los dominios autorizados.");
+    } else {
+      setError(`Error (${err.code || 'unknown'}): ${err.message || 'Error al iniciar sesión'}.`);
     }
-  };
+  }
+};
 
   const handleRedirectLogin = async () => {
     setError(null);
@@ -33,7 +44,9 @@ export const Login: React.FC = () => {
       await loginWithRedirect();
     } catch (err: any) {
       console.error("Redirect Login Error:", err);
-      setError("Error al iniciar la redirección.");
+      const domain = window.location.hostname;
+      const authDomain = auth.app.options.authDomain;
+      setError(`La redirección falló. Asegúrate de que "${domain}" y "${authDomain}" están autorizados en Firebase.`);
       setIsLoggingIn(false);
     }
   };
@@ -59,10 +72,36 @@ export const Login: React.FC = () => {
           <p className="text-slate-400 font-medium">Plataforma de Gestión de Proyectos</p>
         </div>
 
-        {error && (
-          <div className="mb-6 bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-2xl text-sm flex items-start gap-3">
+        {isIframe && (
+          <div className="mb-6 bg-amber-500/10 border border-amber-500/20 text-amber-400 p-4 rounded-2xl text-xs flex items-start gap-3">
             <AlertCircle className="w-5 h-5 shrink-0" />
-            <p>{error}</p>
+            <div>
+              <p className="font-bold mb-1 underline">MODO IFRAME DETECTADO</p>
+              <p>Google bloquea el inicio de sesión dentro de otras webs por seguridad. Por favor, pulsa <b>"Abrir en pestaña nueva"</b> para poder entrar.</p>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-6 space-y-4">
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-2xl text-sm flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <p>{error}</p>
+            </div>
+            
+            <div className="bg-white/5 border border-white/10 p-4 rounded-2xl text-[10px] text-slate-400 uppercase tracking-wider">
+              <p className="font-bold mb-2 text-emerald-400">PASOS PARA SOLUCIONAR (FIREBASE):</p>
+              <p className="mb-2 text-[9px] lowercase italic text-slate-500">Ve a Authentication &gt; Settings &gt; Authorized domains y añade:</p>
+              <div className="space-y-1 mb-4 select-all">
+                <div className="bg-black/20 p-2 rounded border border-white/5 font-mono text-white normal-case">{window.location.hostname}</div>
+                <div className="bg-black/20 p-2 rounded border border-white/5 font-mono text-white normal-case">{auth.app.options.authDomain}</div>
+              </div>
+              <ul className="list-decimal list-inside space-y-1">
+                <li>Asegúrate de que Google esté HABILITADO.</li>
+                <li>Si estás en Vercel, añade tu dominio .vercel.app</li>
+                <li>Pulsa "Redirección" si nada de esto ayuda.</li>
+              </ul>
+            </div>
           </div>
         )}
 

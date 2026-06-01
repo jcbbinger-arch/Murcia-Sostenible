@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Upload, FileText, User, LogIn, Download, Hash, Copy, CheckCircle2, GraduationCap, UserPlus, Loader2, Clock, Circle, ClipboardList, Lock, Unlock, Edit2, Save } from 'lucide-react';
 import { ChecklistStatus } from '../types';
-import { db, doc, updateDoc } from '../firebase';
+import { db, doc, updateDoc, OperationType, handleFirestoreError } from '../firebase';
 
 export const Dashboard: React.FC = () => {
   const { state, setCurrentUser, claimTeamMember, joinTeamAsNewMember, updateChecklistItem, updateTeamMembers } = useProject();
@@ -498,7 +498,9 @@ export const Dashboard: React.FC = () => {
                       onClick={() => {
                         if (window.confirm("¿Estás seguro de que quieres abandonar este proyecto? Perderás el acceso a menos que vuelvas a usar el código.")) {
                           // We can use a context function if we had one, or just updateDoc here
-                          updateDoc(doc(db, 'users', user!.uid), { projectId: null });
+                          updateDoc(doc(db, 'users', user!.uid), { projectId: null }).catch(err => {
+                            handleFirestoreError(err, OperationType.UPDATE, `users/${user!.uid}`);
+                          });
                         }
                       }}
                       className="text-[10px] font-black text-red-400 uppercase tracking-widest hover:text-red-600 transition-all"

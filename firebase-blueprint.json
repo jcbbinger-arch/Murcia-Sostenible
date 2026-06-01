@@ -9,8 +9,8 @@
         "email": { "type": "string", "format": "email", "description": "Correo electrónico del usuario." },
         "displayName": { "type": "string", "description": "Nombre visible." },
         "photoURL": { "type": "string", "description": "URL de la foto de perfil." },
-        "role": { "type": "string", "enum": ["admin", "student"], "description": "Rol del usuario." },
-        "status": { "type": "string", "enum": ["pending", "approved"], "description": "Estado de aprobación por el profesor." },
+        "role": { "type": "string", "enum": ["admin", "student", "assistant"], "description": "Rol del usuario." },
+        "status": { "type": "string", "enum": ["pending", "approved", "suspended"], "description": "Estado de aprobación por el profesor." },
         "projectId": { "type": "string", "description": "ID del proyecto al que pertenece." }
       },
       "required": ["uid", "email", "role", "status"]
