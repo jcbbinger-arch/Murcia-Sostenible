@@ -46,6 +46,7 @@ interface ProjectContextType {
   updateChecklistItem: (id: string, status: ChecklistStatus) => void;
   toggleTeamLock: () => void;
   resetProject: () => void;
+  persistChanges: () => Promise<void>;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -707,12 +708,28 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     setState(INITIAL_STATE);
   };
 
+  const persistChanges = async () => {
+    if (!profile?.projectId) return;
+    try {
+        const projectRef = doc(db, 'projects', profile.projectId);
+        // We only update the data fields, not the metadata
+        const { id, code, createdBy, createdAt, currentUser, ...dataToSync } = state;
+        const cleanedData = Object.fromEntries(
+            Object.entries(dataToSync).filter(([_, v]) => v !== undefined)
+        );
+        await updateDoc(projectRef, cleanedData as any);
+    } catch (error) {
+        handleFirestoreError(error, OperationType.UPDATE, `projects/${profile.projectId}`);
+        throw error;
+    }
+  };
+
   return (
     <ProjectContext.Provider value={{ 
       state, loading, setCurrentUser, createProject, joinProject, claimTeamMember, joinTeamAsNewMember, updateSchoolSettings, updateImage,
       updateTeamName, updateTeamMembers, selectZone, updateZoneJustification, assignTask, updateTaskContent,
       updateConcept, updateMission, addDish, removeDish, updateDish, updateMenuPrototype, updateTask6Roles,
-      updateSeasonalProducts, updateInterimReport, savePeerReview, updateChecklistItem, toggleTeamLock, resetProject 
+      updateSeasonalProducts, updateInterimReport, savePeerReview, updateChecklistItem, toggleTeamLock, resetProject, persistChanges 
     }}>
       {children}
     </ProjectContext.Provider>

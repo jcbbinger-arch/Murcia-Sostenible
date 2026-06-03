@@ -4,6 +4,7 @@ import { useProject } from '../context/ProjectContext';
 import { useAuth } from '../context/AuthContext';
 import { Dish, IngredientRow } from '../types';
 import { BookOpen, Calculator, Save, AlertTriangle } from 'lucide-react';
+import { SaveButton } from '../components/SaveButton';
 
 export const Task5_Financials: React.FC = () => {
   const { state, updateDish } = useProject();
@@ -369,6 +370,7 @@ export const Task5_Financials: React.FC = () => {
             )}
         </div>
       )}
+      <SaveButton />
     </div>
   );
 };

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useProject } from '../context/ProjectContext';
 import { useAuth } from '../context/AuthContext';
 import { Palette, ExternalLink, Upload, PenTool, Layout, Eye, Save } from 'lucide-react';
+import { SaveButton } from '../components/SaveButton';
 
 export const Task4_MenuPrototype: React.FC = () => {
   const { state, updateMenuPrototype } = useProject();
@@ -217,6 +218,7 @@ export const Task4_MenuPrototype: React.FC = () => {
             </div>
         </div>
       )}
+      <SaveButton />
     </div>
   );
 };

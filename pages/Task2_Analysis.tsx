@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useProject } from '../context/ProjectContext';
 import { Lightbulb, Printer, ChevronDown, ChevronUp, Lock, AlertTriangle, Save, CheckCircle, Image as ImageIcon, Trash, Info } from 'lucide-react';
+import { SaveButton } from '../components/SaveButton';
 
 export const Task2_Analysis: React.FC = () => {
   const { state, updateTaskContent, updateConcept } = useProject();
@@ -465,6 +466,7 @@ export const Task2_Analysis: React.FC = () => {
             </div>
         </div>
       )}
+      <SaveButton />
     </div>
   );
 };

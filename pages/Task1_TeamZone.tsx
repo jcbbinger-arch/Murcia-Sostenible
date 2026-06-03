@@ -5,6 +5,7 @@ import { useProject } from '../context/ProjectContext';
 import { useAuth } from '../context/AuthContext';
 import { TeamMember } from '../types';
 import { CheckCircle, FileText, UserPlus, Trash, Printer, Eye, EyeOff, Upload, Image as ImageIcon, Users, Lock, Unlock, ChevronDown, ChevronUp, Lightbulb, Info } from 'lucide-react';
+import { SaveButton } from '../components/SaveButton';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -743,6 +744,7 @@ export const Task1_TeamZone: React.FC = () => {
             </div>
         </div>
       )}
+      <SaveButton />
     </div>
   );
 };

@@ -3,6 +3,7 @@ import { useProject } from '../context/ProjectContext';
 import { Dish, DishType, IngredientRow, SeasonalProductContribution } from '../types';
 import { ALLERGENS } from '../constants';
 import { Plus, Trash2, Edit2, Image as ImageIcon, AlertCircle, BookOpen, PenTool, ClipboardList, Save, Leaf, Printer } from 'lucide-react';
+import { SaveButton } from '../components/SaveButton';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -872,6 +873,7 @@ export const MenuDesign: React.FC = () => {
       <style>{`
         .label { display: block; font-size: 0.75rem; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 0.25rem; }
       `}</style>
+      <SaveButton />
     </div>
   );
 };

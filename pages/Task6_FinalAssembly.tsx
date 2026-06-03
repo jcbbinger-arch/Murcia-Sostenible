@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useProject } from '../context/ProjectContext';
 import { Palette, Hammer, BookOpen, Lock, UserCheck, Eye, ExternalLink } from 'lucide-react';
+import { SaveButton } from '../components/SaveButton';
 
 export const Task6_FinalAssembly: React.FC = () => {
   const { state, updateTask6Roles } = useProject();
@@ -227,6 +228,7 @@ export const Task6_FinalAssembly: React.FC = () => {
               </div>
           </div>
       )}
+      <SaveButton />
     </div>
   );
 };

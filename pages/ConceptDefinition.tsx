@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useProject } from '../context/ProjectContext';
-import { Search, Users, ShieldCheck } from 'lucide-react';
+import { Search, Users, ShieldCheck, Save } from 'lucide-react';
+import { SaveButton } from '../components/SaveButton';
 
 export const ConceptDefinition: React.FC = () => {
   const { state, updateConcept, updateMission } = useProject();
@@ -197,6 +198,7 @@ export const ConceptDefinition: React.FC = () => {
             </div>
         </div>
       )}
+      <SaveButton />
     </div>
   );
 };

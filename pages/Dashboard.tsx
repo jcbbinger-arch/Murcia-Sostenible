@@ -8,6 +8,7 @@ import { ChecklistStatus } from '../types';
 import { db, doc, updateDoc, OperationType, handleFirestoreError } from '../firebase';
 import { TeamPanel } from '../components/TeamPanel';
 import { DashboardSettings } from '../components/DashboardSettings';
+import { SaveButton } from '../components/SaveButton';
 
 export const Dashboard: React.FC = () => {
   const { state, setCurrentUser, claimTeamMember, joinTeamAsNewMember, updateChecklistItem, updateTeamMembers } = useProject();
@@ -540,6 +541,7 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
       )}
+      <SaveButton />
     </div>
   );
 };
