@@ -56,6 +56,11 @@ export const Task1_TeamZone: React.FC = () => {
     setNewMemberName('');
   };
 
+  const handleUpdateMemberName = (id: string, newName: string) => {
+    const updated = state.team.map(m => m.id === id ? { ...m, name: newName } : m);
+    updateTeamMembers(updated);
+  };
+
   const handleRemoveMember = (id: string) => {
     updateTeamMembers(state.team.filter(m => m.id !== id));
   };
@@ -465,9 +470,17 @@ export const Task1_TeamZone: React.FC = () => {
                                         onChange={() => setCoordinator(member.id)}
                                         className="w-4 h-4 text-green-600 focus:ring-green-500 cursor-pointer"
                                     />
-                                    <span className={member.isCoordinator ? "font-bold text-green-800" : "text-gray-700"}>
-                                        {member.name} {member.isCoordinator && "(Coordinador/a)"}
-                                    </span>
+                                    <input 
+                                        type="text"
+                                        value={member.name}
+                                        onChange={(e) => handleUpdateMemberName(member.id, e.target.value)}
+                                        className={`bg-transparent outline-none border-b border-transparent hover:border-gray-300 focus:border-green-500 w-full ${member.isCoordinator ? "font-bold text-green-800" : "text-gray-700"}`}                
+                                    />
+                                    {member.isCoordinator && (
+                                        <span className="text-xs font-bold text-green-600 uppercase tracking-widest whitespace-nowrap">
+                                            (Coord.)
+                                        </span>
+                                    )}
                                 </div>
                                 <button onClick={() => handleRemoveMember(member.id)} className="text-red-400 hover:text-red-600">
                                     <Trash size={18} />
