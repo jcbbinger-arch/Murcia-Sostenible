@@ -116,7 +116,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [state, setState] = useState<ProjectState>(INITIAL_STATE);
   const [loading, setLoading] = useState(true);
   const isInitialMount = useRef(true);
-  const remoteUpdateInProgress = useRef(false);
+  const syncLock = useRef(false);
 
   // Sync with Firestore
   useEffect(() => {
@@ -131,7 +131,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     
     const unsubscribe = onSnapshot(projectRef, (docSnap) => {
       if (docSnap.exists()) {
-        remoteUpdateInProgress.current = true;
+        syncLock.current = true;
         const data = docSnap.data();
         
         setState(prev => {
@@ -148,7 +148,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
             currentUser: nextCurrentUser
           };
         });
-        remoteUpdateInProgress.current = false;
       }
       setLoading(false);
     }, (error) => {
@@ -166,7 +165,12 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       return;
     }
 
-    if (remoteUpdateInProgress.current || !profile?.projectId) return;
+    if (syncLock.current) {
+        syncLock.current = false;
+        return;
+    }
+
+    if (!profile?.projectId) return;
 
     const timeoutId = setTimeout(async () => {
       try {
