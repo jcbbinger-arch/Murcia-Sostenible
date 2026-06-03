@@ -112,7 +112,7 @@ const sanitizeState = (loadedData: any): ProjectState => {
 };
 
 export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { profile, user, adminEditMode } = useAuth();
+  const { profile, user, adminEditMode, loading: authLoading } = useAuth();
   const [state, setState] = useState<ProjectState>(INITIAL_STATE);
   const [loading, setLoading] = useState(true);
   const isInitialMount = useRef(true);
@@ -120,6 +120,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // Sync with Firestore
   useEffect(() => {
+    if (authLoading) return;
+
     if (!profile?.projectId) {
       setState(INITIAL_STATE);
       setLoading(false);
@@ -156,7 +158,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     });
 
     return () => unsubscribe();
-  }, [profile?.projectId, user?.uid]);
+  }, [profile?.projectId, user?.uid, authLoading]);
 
   // Push local changes to Firestore (Debounced)
   // DEPRECATED: Replaced by granular updates in each handler function
