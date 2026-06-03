@@ -53,16 +53,16 @@ const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 const sanitizeState = (loadedData: any): ProjectState => {
     if (!loadedData) return INITIAL_STATE;
     
-    const safeTask6 = { 
-        designerIds: loadedData.task6?.designerIds || [],
-        artisanIds: loadedData.task6?.artisanIds || [],
-        editorIds: loadedData.task6?.editorIds || []
-    };
-
-    return {
+    // Explicitly merge with initial state to ensure all fields are present
+    // but allow loadedData to override them even if they are empty strings.
+    const result: ProjectState = {
         ...INITIAL_STATE,
         ...loadedData,
-        // Sanitize team to prevent duplicate UIDs
+        // Override fields that might be missing in loadedData with defaults if necessary
+        schoolName: loadedData.schoolName !== undefined ? loadedData.schoolName : INITIAL_STATE.schoolName,
+        academicYear: loadedData.academicYear !== undefined ? loadedData.academicYear : INITIAL_STATE.academicYear,
+        
+        // Sanitize team
         team: Array.isArray(loadedData.team) 
             ? loadedData.team.reduce((acc: TeamMember[], current: TeamMember) => {
                 const isRealId = current.id.length >= 20;
@@ -75,15 +75,21 @@ const sanitizeState = (loadedData: any): ProjectState => {
                 return acc;
             }, [])
             : [],
+        
         concept: { ...INITIAL_STATE.concept, ...(loadedData.concept || {}) },
         missions: { ...INITIAL_STATE.missions, ...(loadedData.missions || {}) },
         task2: { ...INITIAL_STATE.task2, ...(loadedData.task2 || {}) },
-        task6: safeTask6,
+        task6: {
+            designerIds: loadedData.task6?.designerIds || [],
+            artisanIds: loadedData.task6?.artisanIds || [],
+            editorIds: loadedData.task6?.editorIds || []
+        },
         isTeamClosed: loadedData.isTeamClosed || false,
         menuPrototype: { ...INITIAL_STATE.menuPrototype, ...(loadedData.menuPrototype || {}) },
         dishes: Array.isArray(loadedData.dishes) ? loadedData.dishes : [],
         seasonalProducts: Array.isArray(loadedData.seasonalProducts) ? loadedData.seasonalProducts : [],
         coEvaluations: Array.isArray(loadedData.coEvaluations) ? loadedData.coEvaluations : [],
+        
         interimReport: {
             ...INITIAL_STATE.interimReport,
             ...(loadedData.interimReport || {}),
@@ -101,6 +107,8 @@ const sanitizeState = (loadedData: any): ProjectState => {
         },
         checklist: Array.isArray(loadedData.checklist) ? loadedData.checklist : INITIAL_CHECKLIST,
     };
+    
+    return result;
 };
 
 export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
