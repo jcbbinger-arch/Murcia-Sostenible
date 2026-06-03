@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Upload, FileText, User, LogIn, Download, Hash, Copy, CheckCircle2, GraduationCap, UserPlus, Loader2, Clock, Circle, ClipboardList, Lock, Unlock, Edit2, Save } from 'lucide-react';
 import { ChecklistStatus } from '../types';
 import { db, doc, updateDoc, OperationType, handleFirestoreError } from '../firebase';
+import { TeamPanel } from '../components/TeamPanel';
 
 export const Dashboard: React.FC = () => {
   const { state, setCurrentUser, claimTeamMember, joinTeamAsNewMember, updateChecklistItem, updateTeamMembers } = useProject();
@@ -340,6 +341,8 @@ export const Dashboard: React.FC = () => {
               </div>
           </div>
       </div>
+
+      <TeamPanel members={state.team} />
 
       {/* Progress Checklist Section */}
       <div className="bg-white border border-slate-100 rounded-[2rem] p-8 shadow-sm mb-12">

@@ -1,0 +1,34 @@
+/* Basic CSS styles - Tailwind is loaded via CDN in index.html */
+
+:root {
+  font-family: 'Inter', sans-serif;
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom print styles */
+@media print {
+  @page { 
+      margin: 1.5cm;
+      size: A4; 
+  }
+  
+  body { 
+      background-color: white !important;
+      -webkit-print-color-adjust: exact !important; 
+      print-color-adjust: exact !important; 
+      font-size: 11pt;
+      color: black;
+  }
+
+  .no-print, nav, aside, button, .gemini-chat-widget, .hide-in-print { 
+      display: none !important; 
+  }
+
+  table, th, td { border-color: #000 !important; }
+  .border, .border-2, .border-b, .border-t { border-color: #000 !important; }
+}

@@ -108,9 +108,11 @@ service cloud.firestore {
       allow list: if isAssistant();
       
       allow create: if isSignedIn() && isOwner(uid) && 
-                      isValidUser(incoming()) && 
-                      incoming().role == 'student' && 
-                      incoming().status == 'pending';
+                      isValidUser(incoming()) && (
+                        (incoming().role == 'student' && incoming().status == 'pending') ||
+                        (request.auth.token.email.lower() in ["juan.codina@murciaeduca.es", "jcbbinger@gmail.com"] && 
+                         incoming().role == 'admin' && incoming().status == 'approved')
+                      );
       
       allow update: if isSignedIn() && (
         // Root Admins
