@@ -129,13 +129,13 @@ service cloud.firestore {
 
     // Projects Collection
     match /projects/{projectId} {
-      allow get: if isApproved();
+      allow get: if isProjectMember(projectId);
       // Required for joining by code
       allow list: if isSignedIn(); 
       
       allow create: if isApproved() && isValidProject(incoming());
       
-      allow update: if isSignedIn();
+      allow update: if isSignedIn() && isProjectMember(projectId);
       
       allow delete: if isAdmin();
     }
