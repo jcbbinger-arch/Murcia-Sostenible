@@ -7,6 +7,28 @@ import { CheckCircle, FileText, UserPlus, Trash, Printer, Eye, EyeOff, Upload, I
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
+const TeamMemberInput: React.FC<{ member: TeamMember, updateTeamMembers: (members: TeamMember[]) => void, allTeam: TeamMember[] }> = ({ member, updateTeamMembers, allTeam }) => {
+    const [name, setName] = useState(member.name);
+
+    const handleSave = () => {
+        if (name !== member.name) {
+            const updated = allTeam.map(m => m.id === member.id ? { ...m, name: name } : m);
+            updateTeamMembers(updated);
+        }
+    };
+
+    return (
+        <input 
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onBlur={handleSave}
+            onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+            className={`bg-transparent outline-none border-b border-transparent hover:border-gray-300 focus:border-green-500 w-full ${member.isCoordinator ? "font-bold text-green-800" : "text-gray-700"}`}                
+        />
+    );
+};
+
 export const Task1_TeamZone: React.FC = () => {
   const { 
     state, 
@@ -54,11 +76,6 @@ export const Task1_TeamZone: React.FC = () => {
     
     updateTeamMembers([...state.team, newMember]);
     setNewMemberName('');
-  };
-
-  const handleUpdateMemberName = (id: string, newName: string) => {
-    const updated = state.team.map(m => m.id === id ? { ...m, name: newName } : m);
-    updateTeamMembers(updated);
   };
 
   const handleRemoveMember = (id: string) => {
@@ -470,12 +487,7 @@ export const Task1_TeamZone: React.FC = () => {
                                         onChange={() => setCoordinator(member.id)}
                                         className="w-4 h-4 text-green-600 focus:ring-green-500 cursor-pointer"
                                     />
-                                    <input 
-                                        type="text"
-                                        value={member.name}
-                                        onChange={(e) => handleUpdateMemberName(member.id, e.target.value)}
-                                        className={`bg-transparent outline-none border-b border-transparent hover:border-gray-300 focus:border-green-500 w-full ${member.isCoordinator ? "font-bold text-green-800" : "text-gray-700"}`}                
-                                    />
+                                    <TeamMemberInput member={member} updateTeamMembers={updateTeamMembers} allTeam={state.team} />
                                     {member.isCoordinator && (
                                         <span className="text-xs font-bold text-green-600 uppercase tracking-widest whitespace-nowrap">
                                             (Coord.)
