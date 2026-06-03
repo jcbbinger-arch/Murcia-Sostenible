@@ -4,12 +4,11 @@ import { ZONES } from '../constants';
 import { useProject } from '../context/ProjectContext';
 import { useAuth } from '../context/AuthContext';
 import { TeamMember } from '../types';
-import { db, updateDoc, doc, OperationType, handleFirestoreError } from '../firebase';
 import { CheckCircle, FileText, UserPlus, Trash, Printer, Eye, EyeOff, Upload, Image as ImageIcon, Users, Lock, Unlock, ChevronDown, ChevronUp, Lightbulb, Info } from 'lucide-react';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-const TeamMemberInput: React.FC<{ member: TeamMember, updateTeamMembers: (members: TeamMember[]) => void, allTeam: TeamMember[], projectId: string | undefined }> = ({ member, updateTeamMembers, allTeam, projectId }) => {
+const TeamMemberInput: React.FC<{ member: TeamMember, updateTeamMembers: (members: TeamMember[]) => void, allTeam: TeamMember[] }> = ({ member, updateTeamMembers, allTeam }) => {
     const [name, setName] = useState(member.name);
     const [isFocused, setIsFocused] = useState(false);
     const { profile } = useAuth();
@@ -20,18 +19,10 @@ const TeamMemberInput: React.FC<{ member: TeamMember, updateTeamMembers: (member
         }
     }, [member.name, isFocused]);
 
-    const handleSave = async () => {
+    const handleSave = () => {
         if (name !== member.name) {
             const updated = allTeam.map(m => m.id === member.id ? { ...m, name: name } : m);
             updateTeamMembers(updated);
-            
-            if (projectId) {
-                try {
-                    await updateDoc(doc(db, 'projects', projectId), { team: updated });
-                } catch (err) {
-                    handleFirestoreError(err, OperationType.UPDATE, `projects/${projectId}`);
-                }
-            }
         }
     };
 
@@ -511,7 +502,7 @@ export const Task1_TeamZone: React.FC = () => {
                                         onChange={() => setCoordinator(member.id)}
                                         className="w-4 h-4 text-green-600 focus:ring-green-500 cursor-pointer"
                                     />
-                                    <TeamMemberInput member={member} updateTeamMembers={updateTeamMembers} allTeam={state.team} projectId={profile?.projectId} />
+                                    <TeamMemberInput member={member} updateTeamMembers={updateTeamMembers} allTeam={state.team} />
                                     {member.isCoordinator && (
                                         <span className="text-xs font-bold text-green-600 uppercase tracking-widest whitespace-nowrap">
                                             (Coord.)

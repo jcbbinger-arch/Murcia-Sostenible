@@ -159,6 +159,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [profile?.projectId, user?.uid]);
 
   // Push local changes to Firestore (Debounced)
+  // DEPRECATED: Replaced by granular updates in each handler function
+  /*
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -188,6 +190,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     return () => clearTimeout(timeoutId);
   }, [state, profile?.projectId]);
+  */
 
   const createProject = async (name: string) => {
     if (!user) throw new Error("Debes iniciar sesión");
@@ -345,29 +348,89 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const setCurrentUser = (id: string | null) => setState(prev => ({ ...prev, currentUser: id }));
 
-  const updateSchoolSettings = (name: string, year: string) => setState(prev => ({ ...prev, schoolName: name, academicYear: year }));
-  const updateImage = (type: 'schoolLogo' | 'groupPhoto', base64: string | null) => setState(prev => ({ ...prev, [type]: base64 }));
-  const updateTeamName = (name: string) => setState(prev => ({ ...prev, teamName: name }));
-  const updateTeamMembers = (members: TeamMember[]) => {
+  const updateSchoolSettings = async (name: string, year: string) => {
+    setState(prev => ({ ...prev, schoolName: name, academicYear: year }));
+    if (profile?.projectId) {
+      await updateDoc(doc(db, 'projects', profile.projectId), {
+        schoolName: name,
+        academicYear: year,
+      }).catch(err => {
+        handleFirestoreError(err, OperationType.UPDATE, `projects/${profile.projectId}`);
+      });
+    }
+  };
+  const updateImage = async (type: 'schoolLogo' | 'groupPhoto', base64: string | null) => {
+    setState(prev => ({ ...prev, [type]: base64 }));
+    if (profile?.projectId) {
+        await updateDoc(doc(db, 'projects', profile.projectId), {
+            [type]: base64,
+        }).catch(err => {
+            handleFirestoreError(err, OperationType.UPDATE, `projects/${profile.projectId}`);
+        });
+    }
+  };
+  const updateTeamName = async (name: string) => {
+     setState(prev => ({ ...prev, teamName: name }));
+     if (profile?.projectId) {
+         await updateDoc(doc(db, 'projects', profile.projectId), {
+             teamName: name,
+         }).catch(err => {
+             handleFirestoreError(err, OperationType.UPDATE, `projects/${profile.projectId}`);
+         });
+     }
+  };
+  const updateTeamMembers = async (members: TeamMember[]) => {
     const isCoordinator = state.team.find(m => m.id === state.currentUser)?.isCoordinator;
     const noMembers = state.team.length === 0;
     if (isCoordinator || noMembers || adminEditMode) {
       setState(prev => ({ ...prev, team: members }));
+      if (profile?.projectId) {
+          syncLock.current = true;
+          await updateDoc(doc(db, 'projects', profile.projectId), { team: members }).catch(err => {
+              handleFirestoreError(err, OperationType.UPDATE, `projects/${profile.projectId}`);
+          });
+      }
     } else {
       console.warn("Permission denied: Only coordinators can manage the team.");
     }
   };
-  const selectZone = (zone: Zone) => setState(prev => ({ ...prev, selectedZone: zone }));
-  const updateZoneJustification = (text: string) => setState(prev => ({ ...prev, zoneJustification: text }));
-  const assignTask = (taskId: number, memberId: string | null) => {
+  const selectZone = async (zone: Zone) => {
+    setState(prev => ({ ...prev, selectedZone: zone }));
+    if (profile?.projectId) {
+      await updateDoc(doc(db, 'projects', profile.projectId), {
+          selectedZone: zone,
+      }).catch(err => {
+          handleFirestoreError(err, OperationType.UPDATE, `projects/${profile.projectId}`);
+      });
+    }
+  };
+  const updateZoneJustification = async (text: string) => {
+    setState(prev => ({ ...prev, zoneJustification: text }));
+    if (profile?.projectId) {
+      await updateDoc(doc(db, 'projects', profile.projectId), {
+          zoneJustification: text,
+      }).catch(err => {
+          handleFirestoreError(err, OperationType.UPDATE, `projects/${profile.projectId}`);
+      });
+    }
+  };
+  const assignTask = async (taskId: number, memberId: string | null) => {
     const isCoordinator = state.team.find(m => m.id === state.currentUser)?.isCoordinator;
     if (isCoordinator || adminEditMode) {
-      setState(prev => ({ ...prev, task2: { ...prev.task2, tasks: prev.task2.tasks.map(t => t.id === taskId ? { ...t, assignedToId: memberId } : t) } }));
+      const updatedTasks = state.task2.tasks.map(t => t.id === taskId ? { ...t, assignedToId: memberId } : t);
+      setState(prev => ({ ...prev, task2: { ...prev.task2, tasks: updatedTasks } }));
+      if (profile?.projectId) {
+        await updateDoc(doc(db, 'projects', profile.projectId), {
+            task2: { ...state.task2, tasks: updatedTasks }
+        }).catch(err => {
+            handleFirestoreError(err, OperationType.UPDATE, `projects/${profile.projectId}`);
+        });
+      }
     } else {
       console.warn("Permission denied: Only coordinators can assign tasks.");
     }
   };
-  const updateTaskContent = (taskId: number, content: string) => {
+  const updateTaskContent = async (taskId: number, content: string) => {
     setState(prev => {
       const task = prev.task2.tasks.find(t => t.id === taskId);
       const isCoordinator = prev.team.find(m => m.id === prev.currentUser)?.isCoordinator;
@@ -377,11 +440,53 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       }
       return { ...prev, task2: { ...prev.task2, tasks: prev.task2.tasks.map(t => t.id === taskId ? { ...t, content: content } : t) } };
     });
+    
+    // Need to get the updated state, so we need to pass a callback to setState or use ref, 
+    // but here we can just compute the new state manually for the updateDoc 
+    // to avoid depending on the asynchronous setState completion
+    const updatedTasks = state.task2.tasks.map(t => t.id === taskId ? { ...t, content: content } : t);
+    if (profile?.projectId) {
+      await updateDoc(doc(db, 'projects', profile.projectId), {
+          task2: { ...state.task2, tasks: updatedTasks }
+      }).catch(err => {
+          handleFirestoreError(err, OperationType.UPDATE, `projects/${profile.projectId}`);
+      });
+    }
   };
-  const updateConcept = (key: keyof ProjectState['concept'], value: any) => setState(prev => ({ ...prev, concept: { ...prev.concept, [key]: value } }));
-  const updateMission = (role: keyof ProjectState['missions'], data: any) => setState(prev => ({ ...prev, missions: { ...prev.missions, [role]: { ...prev.missions[role], ...data } } }));
-  const addDish = (dish: Dish) => setState(prev => ({ ...prev, dishes: [...prev.dishes, { ...dish, author: dish.author || state.currentUser || '' }] }));
-  const removeDish = (id: string) => {
+  const updateConcept = async (key: keyof ProjectState['concept'], value: any) => {
+    setState(prev => ({ ...prev, concept: { ...prev.concept, [key]: value } }));
+    if (profile?.projectId) {
+        await updateDoc(doc(db, 'projects', profile.projectId), {
+            concept: { ...state.concept, [key]: value }
+        }).catch(err => {
+            handleFirestoreError(err, OperationType.UPDATE, `projects/${profile.projectId}`);
+        });
+    }
+  };
+  const updateMission = async (role: keyof ProjectState['missions'], data: any) => {
+    setState(prev => ({ ...prev, missions: { ...prev.missions, [role]: { ...prev.missions[role], ...data } } }));
+    if (profile?.projectId) {
+        await updateDoc(doc(db, 'projects', profile.projectId), {
+            missions: { ...state.missions, [role]: { ...state.missions[role], ...data } }
+        }).catch(err => {
+            handleFirestoreError(err, OperationType.UPDATE, `projects/${profile.projectId}`);
+        });
+    }
+  };
+  const addDish = async (dish: Dish) => {
+    setState(prev => ({ ...prev, dishes: [...prev.dishes, { ...dish, author: dish.author || state.currentUser || '' }] }));
+    if (profile?.projectId) {
+      // Need updated state
+      const newDishes = [...state.dishes, { ...dish, author: dish.author || state.currentUser || '' }];
+      await updateDoc(doc(db, 'projects', profile.projectId), {
+        dishes: newDishes
+      }).catch(err => {
+        handleFirestoreError(err, OperationType.UPDATE, `projects/${profile.projectId}`);
+      });
+    }
+  };
+  const removeDish = async (id: string) => {
+    let updatedDishes: Dish[] = [];
     setState(prev => {
       const dish = prev.dishes.find(d => d.id === id);
       const isCoordinator = prev.team.find(m => m.id === prev.currentUser)?.isCoordinator;
@@ -389,10 +494,20 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         console.warn("Permission denied: You can only remove your own dishes.");
         return prev;
       }
-      return { ...prev, dishes: prev.dishes.filter(d => d.id !== id) };
+      updatedDishes = prev.dishes.filter(d => d.id !== id);
+      return { ...prev, dishes: updatedDishes };
     });
+    
+    if (profile?.projectId && updatedDishes.length !== state.dishes.length) {
+      await updateDoc(doc(db, 'projects', profile.projectId), {
+        dishes: updatedDishes
+      }).catch(err => {
+        handleFirestoreError(err, OperationType.UPDATE, `projects/${profile.projectId}`);
+      });
+    }
   };
-  const updateDish = (dish: Dish) => {
+  const updateDish = async (dish: Dish) => {
+    let updatedDishes: Dish[] = [];
     setState(prev => {
       const existing = prev.dishes.find(d => d.id === dish.id);
       const isCoordinator = prev.team.find(m => m.id === prev.currentUser)?.isCoordinator;
@@ -400,10 +515,20 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         console.warn("Permission denied: You can only update your own dishes.");
         return prev;
       }
-      return { ...prev, dishes: prev.dishes.map(d => d.id === dish.id ? dish : d) };
+      updatedDishes = prev.dishes.map(d => d.id === dish.id ? dish : d);
+      return { ...prev, dishes: updatedDishes };
     });
+    
+    if (profile?.projectId && updatedDishes.length > 0) {
+      await updateDoc(doc(db, 'projects', profile.projectId), {
+          dishes: updatedDishes
+      }).catch(err => {
+          handleFirestoreError(err, OperationType.UPDATE, `projects/${profile.projectId}`);
+      });
+    }
   };
-  const updateMenuPrototype = (data: Partial<MenuPrototype>) => {
+  const updateMenuPrototype = async (data: Partial<MenuPrototype>) => {
+    let newMenuPrototype: MenuPrototype | null = null;
     setState(prev => {
       const currentUserMember = prev.team.find(m => m.id === prev.currentUser);
       const isCoordinator = currentUserMember?.isCoordinator || false;
@@ -412,7 +537,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       const noRolesAssigned = prev.task6.designerIds.length === 0 && prev.task6.artisanIds.length === 0 && prev.task6.editorIds.length === 0;
 
       if (isCoordinator || noRolesAssigned || adminEditMode) {
-        return { ...prev, menuPrototype: { ...prev.menuPrototype, ...data } };
+        newMenuPrototype = { ...prev.menuPrototype, ...data };
+        return { ...prev, menuPrototype: newMenuPrototype };
       }
 
       const keys = Object.keys(data);
@@ -420,21 +546,41 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       const canEditPhysical = isArtisan && (keys.includes('physicalPhoto') || keys.includes('physicalDescription'));
       
       if (canEditDigital || canEditPhysical) {
-        return { ...prev, menuPrototype: { ...prev.menuPrototype, ...data } };
+        newMenuPrototype = { ...prev.menuPrototype, ...data };
+        return { ...prev, menuPrototype: newMenuPrototype };
       }
 
       return prev;
     });
+    
+    if (profile?.projectId && newMenuPrototype) {
+      await updateDoc(doc(db, 'projects', profile.projectId), {
+        menuPrototype: newMenuPrototype
+      }).catch(err => {
+        handleFirestoreError(err, OperationType.UPDATE, `projects/${profile.projectId}`);
+      });
+    }
   };
-  const updateTask6Roles = (roles: Partial<Task6Roles>) => {
+  const updateTask6Roles = async (roles: Partial<Task6Roles>) => {
+    let newTask6: Task6Roles | null = null;
     setState(prev => {
       const currentUserMember = prev.team.find(m => m.id === prev.currentUser);
       if (!currentUserMember?.isCoordinator && !adminEditMode) return prev;
-      return { ...prev, task6: { ...prev.task6, ...roles } };
+      newTask6 = { ...prev.task6, ...roles };
+      return { ...prev, task6: newTask6 };
     });
+    
+    if (profile?.projectId && newTask6) {
+      await updateDoc(doc(db, 'projects', profile.projectId), {
+        task6: newTask6
+      }).catch(err => {
+        handleFirestoreError(err, OperationType.UPDATE, `projects/${profile.projectId}`);
+      });
+    }
   };
   
-  const updateInterimReport = (data: any) => {
+  const updateInterimReport = async (data: any) => {
+    let newInterimReport: any = null;
     setState(prev => {
       const currentUserMember = prev.team.find(m => m.id === prev.currentUser);
       const isCoordinator = currentUserMember?.isCoordinator || false;
@@ -442,68 +588,107 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       const noRolesAssigned = prev.task6.designerIds.length === 0 && prev.task6.artisanIds.length === 0 && prev.task6.editorIds.length === 0;
 
       if (isCoordinator || isEditor || noRolesAssigned || adminEditMode) {
-        return { ...prev, interimReport: { ...prev.interimReport, ...data } };
+        newInterimReport = { ...prev.interimReport, ...data };
+        return { ...prev, interimReport: newInterimReport };
       }
       return prev;
     });
+    
+    if (profile?.projectId && newInterimReport) {
+      await updateDoc(doc(db, 'projects', profile.projectId), {
+        interimReport: newInterimReport
+      }).catch(err => {
+        handleFirestoreError(err, OperationType.UPDATE, `projects/${profile.projectId}`);
+      });
+    }
   };
 
-  const updateSeasonalProducts = (data: Partial<SeasonalProductContribution>) => {
+  const updateSeasonalProducts = async (data: Partial<SeasonalProductContribution>) => {
     if (!state.currentUser) return;
+    let newSeasonalProducts: any = null;
     setState(prev => {
-      const isCoordinator = prev.team.find(m => m.id === prev.currentUser)?.isCoordinator;
-      // If coordinator, we allow editing any, but usually seasonal is per member.
-      // However, for consistency with the request, let's allow coordinator to edit if needed.
-      
       const existing = prev.seasonalProducts.find(p => p.memberId === state.currentUser);
       if (existing) {
-        return {
-          ...prev,
-          seasonalProducts: prev.seasonalProducts.map(p => 
-            p.memberId === state.currentUser ? { ...p, ...data } : p
-          )
-        };
+        newSeasonalProducts = prev.seasonalProducts.map(p => 
+          p.memberId === state.currentUser ? { ...p, ...data } : p
+        );
+        return { ...prev, seasonalProducts: newSeasonalProducts };
       } else {
-        return {
-          ...prev,
-          seasonalProducts: [...prev.seasonalProducts, {
-            memberId: state.currentUser!,
-            productList: '',
-            sustainability: '',
-            impactAnalysis: '',
-            sources: [],
-            ...data
-          }]
-        };
+        newSeasonalProducts = [...prev.seasonalProducts, {
+          memberId: state.currentUser!,
+          productList: '',
+          sustainability: '',
+          impactAnalysis: '',
+          sources: [],
+          ...data
+        }];
+        return { ...prev, seasonalProducts: newSeasonalProducts };
       }
     });
+    
+    if (profile?.projectId && newSeasonalProducts) {
+      await updateDoc(doc(db, 'projects', profile.projectId), {
+        seasonalProducts: newSeasonalProducts
+      }).catch(err => {
+        handleFirestoreError(err, OperationType.UPDATE, `projects/${profile.projectId}`);
+      });
+    }
   };
 
-  const savePeerReview = (review: PeerReview) => {
+  const savePeerReview = async (review: PeerReview) => {
+    let newCoEvaluations: any = null;
     setState(prev => {
       if (review.evaluatorId !== prev.currentUser) return prev;
-      return { ...prev, coEvaluations: [...prev.coEvaluations.filter(r => !(r.evaluatorId === review.evaluatorId && r.targetId === review.targetId)), review] };
+      newCoEvaluations = [...prev.coEvaluations.filter(r => !(r.evaluatorId === review.evaluatorId && r.targetId === review.targetId)), review];
+      return { ...prev, coEvaluations: newCoEvaluations };
     });
+    
+    if (profile?.projectId && newCoEvaluations) {
+      await updateDoc(doc(db, 'projects', profile.projectId), {
+        coEvaluations: newCoEvaluations
+      }).catch(err => {
+        handleFirestoreError(err, OperationType.UPDATE, `projects/${profile.projectId}`);
+      });
+    }
   };
 
-  const updateChecklistItem = (id: string, status: ChecklistStatus) => {
-    setState(prev => ({
-      ...prev,
-      checklist: prev.checklist.map(item => 
+  const updateChecklistItem = async (id: string, status: ChecklistStatus) => {
+    let newChecklist: any = null;
+    setState(prev => {
+      newChecklist = prev.checklist.map(item => 
         item.id === id ? { ...item, status } : item
-      )
-    }));
+      );
+      return { ...prev, checklist: newChecklist };
+    });
+    
+    if (profile?.projectId && newChecklist) {
+      await updateDoc(doc(db, 'projects', profile.projectId), {
+        checklist: newChecklist
+      }).catch(err => {
+        handleFirestoreError(err, OperationType.UPDATE, `projects/${profile.projectId}`);
+      });
+    }
   };
 
-  const toggleTeamLock = () => {
+  const toggleTeamLock = async () => {
+    let isClosed = false;
     setState(prev => {
       const isCoordinator = prev.team.find(m => m.id === prev.currentUser)?.isCoordinator;
       if (!isCoordinator && !adminEditMode) {
           alert("Solo el coordinador puede cerrar o abrir el equipo.");
           return prev;
       }
-      return { ...prev, isTeamClosed: !prev.isTeamClosed };
+      isClosed = !prev.isTeamClosed;
+      return { ...prev, isTeamClosed: isClosed };
     });
+    
+    if (profile?.projectId) {
+        await updateDoc(doc(db, 'projects', profile.projectId), {
+          isTeamClosed: isClosed
+        }).catch(err => {
+          handleFirestoreError(err, OperationType.UPDATE, `projects/${profile.projectId}`);
+        });
+    }
   };
   
   const resetProject = () => {
