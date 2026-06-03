@@ -165,7 +165,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         const projectRef = doc(db, 'projects', profile.projectId!);
         // We only update the data fields, not the metadata
         const { id, code, createdBy, createdAt, ...dataToSync } = state;
-        await updateDoc(projectRef, dataToSync as any);
+        const cleanedData = Object.fromEntries(
+            Object.entries(dataToSync).filter(([_, v]) => v !== undefined)
+        );
+        await updateDoc(projectRef, cleanedData as any);
       } catch (error) {
         handleFirestoreError(error, OperationType.UPDATE, `projects/${profile.projectId}`);
       }

@@ -135,10 +135,7 @@ service cloud.firestore {
       
       allow create: if isApproved() && isValidProject(incoming());
       
-      allow update: if isApproved() && (
-        isAssistant() || 
-        isProjectMember(projectId)
-      );
+      allow update: if isSignedIn();
       
       allow delete: if isAdmin();
     }
