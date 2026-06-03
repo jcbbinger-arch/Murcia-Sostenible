@@ -710,6 +710,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const persistChanges = async () => {
     if (!profile?.projectId) return;
+    syncLock.current = true;
+    console.log("Persisting changes to Firestore...");
     try {
         const projectRef = doc(db, 'projects', profile.projectId);
         // We only update the data fields, not the metadata
@@ -717,10 +719,15 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         const cleanedData = Object.fromEntries(
             Object.entries(dataToSync).filter(([_, v]) => v !== undefined)
         );
-        await updateDoc(projectRef, cleanedData as any);
+        // Use setDoc with merge: true for more robust updates
+        await setDoc(projectRef, cleanedData, { merge: true });
+        console.log("Persist complete.");
     } catch (error) {
+        console.error("Persist failed:", error);
         handleFirestoreError(error, OperationType.UPDATE, `projects/${profile.projectId}`);
         throw error;
+    } finally {
+        syncLock.current = false;
     }
   };
 
