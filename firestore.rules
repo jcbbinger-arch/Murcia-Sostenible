@@ -137,7 +137,7 @@ service cloud.firestore {
       
       allow update: if isApproved() && (
         isAssistant() || 
-        (isProjectMember(projectId) && isValidProject(incoming()))
+        isProjectMember(projectId)
       );
       
       allow delete: if isAdmin();
