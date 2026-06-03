@@ -5,12 +5,19 @@ import { resizeImage } from '../lib/imageResizer';
 
 export const DashboardSettings: React.FC = () => {
     const { state, updateSchoolSettings, updateImage } = useProject();
+    const [name, setName] = useState(state.schoolName);
+    const [year, setYear] = useState(state.academicYear);
     const [isSaving, setIsSaving] = useState(false);
+
+    // Sync local state if context changes (e.g., from another device/user)
+    React.useEffect(() => {
+        setName(state.schoolName);
+        setYear(state.academicYear);
+    }, [state.schoolName, state.academicYear]);
 
     const handleSave = async () => {
         setIsSaving(true);
-        // We already update the state via onChange, so we just persist.
-        // The persistence is handled via the debounced useEffect in ProjectContext
+        updateSchoolSettings(name, year);
         setTimeout(() => setIsSaving(false), 1000);
     };
 
@@ -37,8 +44,9 @@ export const DashboardSettings: React.FC = () => {
                   <label className="block text-sm font-black text-slate-400 uppercase tracking-widest mb-2">Nombre del IES</label>
                   <input 
                       type="text" 
-                      value={state.schoolName}
-                      onChange={(e) => updateSchoolSettings(e.target.value, state.academicYear)}
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      onBlur={handleSave}
                       className="w-full p-4 rounded-2xl border-2 border-slate-100 focus:border-emerald-500 outline-none font-bold text-slate-700"
                   />
                 </div>
@@ -46,8 +54,9 @@ export const DashboardSettings: React.FC = () => {
                   <label className="block text-sm font-black text-slate-400 uppercase tracking-widest mb-2">Curso Académico</label>
                   <input 
                       type="text" 
-                      value={state.academicYear}
-                      onChange={(e) => updateSchoolSettings(state.schoolName, e.target.value)}
+                      value={year}
+                      onChange={(e) => setYear(e.target.value)}
+                      onBlur={handleSave}
                       className="w-full p-4 rounded-2xl border-2 border-slate-100 focus:border-emerald-500 outline-none font-bold text-slate-700"
                   />
                 </div>

@@ -21,8 +21,20 @@ export const Task1_TeamZone: React.FC = () => {
   } = useProject();
   const [activeTab, setActiveTab] = useState<'instructions' | 'development' | 'distribution' | 'deliverable'>('instructions');
   const [newMemberName, setNewMemberName] = useState('');
+  const [schoolName, setSchoolName] = useState(state.schoolName);
+  const [academicYear, setAcademicYear] = useState(state.academicYear);
+  const [teamName, setTeamName] = useState(state.teamName);
+  const [zoneJustification, setZoneJustification] = useState(state.zoneJustification);
   const [expandedZoneId, setExpandedZoneId] = useState<number | null>(null);
   const [expandedDistTaskId, setExpandedDistTaskId] = useState<number | null>(null);
+
+  // Sync with context changes
+  React.useEffect(() => {
+    setSchoolName(state.schoolName);
+    setAcademicYear(state.academicYear);
+    setTeamName(state.teamName);
+    setZoneJustification(state.zoneJustification);
+  }, [state.schoolName, state.academicYear, state.teamName, state.zoneJustification]);
 
   const getTaskCount = (memberId: string) => state.task2.tasks.filter(t => t.assignedToId === memberId).length;
 
@@ -311,8 +323,9 @@ export const Task1_TeamZone: React.FC = () => {
                         <label className="block text-sm font-bold text-gray-700 mb-2">Nombre del Centro Educativo</label>
                         <input 
                             type="text" 
-                            value={state.schoolName}
-                            onChange={(e) => updateSchoolSettings(e.target.value, state.academicYear)}
+                            value={schoolName}
+                            onChange={(e) => setSchoolName(e.target.value)}
+                            onBlur={() => updateSchoolSettings(schoolName, academicYear)}
                             className="w-full p-2 border border-gray-300 rounded"
                         />
                     </div>
@@ -320,8 +333,9 @@ export const Task1_TeamZone: React.FC = () => {
                          <label className="block text-sm font-bold text-gray-700 mb-2">Curso Académico</label>
                          <input 
                             type="text" 
-                            value={state.academicYear}
-                            onChange={(e) => updateSchoolSettings(state.schoolName, e.target.value)}
+                            value={academicYear}
+                            onChange={(e) => setAcademicYear(e.target.value)}
+                            onBlur={() => updateSchoolSettings(schoolName, academicYear)}
                             className="w-full p-2 border border-gray-300 rounded"
                         />
                     </div>
@@ -395,8 +409,9 @@ export const Task1_TeamZone: React.FC = () => {
                         <label className="block text-sm font-bold text-gray-700 mb-2">Nombre del Equipo</label>
                         <input 
                             type="text" 
-                            value={state.teamName}
-                            onChange={(e) => updateTeamName(e.target.value)}
+                            value={teamName}
+                            onChange={(e) => setTeamName(e.target.value)}
+                            onBlur={() => updateTeamName(teamName)}
                             placeholder="Ej: Los Innovadores del Sabor"
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                         />
@@ -528,8 +543,9 @@ export const Task1_TeamZone: React.FC = () => {
                     Explica brevemente por qué habéis elegido esa zona (2-3 líneas).
                 </label>
                 <textarea 
-                    value={state.zoneJustification}
-                    onChange={(e) => updateZoneJustification(e.target.value)}
+                    value={zoneJustification}
+                    onChange={(e) => setZoneJustification(e.target.value)}
+                    onBlur={() => updateZoneJustification(zoneJustification)}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 h-24"
                     placeholder="Ej: Hemos elegido el Mar Menor porque nos apasiona la cocina marinera..."
                 />
