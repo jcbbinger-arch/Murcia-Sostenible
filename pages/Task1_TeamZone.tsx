@@ -11,7 +11,10 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 const TeamMemberInput: React.FC<{ member: TeamMember, updateTeamMembers: (members: TeamMember[]) => void, allTeam: TeamMember[] }> = ({ member, updateTeamMembers, allTeam }) => {
     const [name, setName] = useState(member.name);
     const [isFocused, setIsFocused] = useState(false);
-    const { profile } = useAuth();
+    const { profile, adminEditMode } = useAuth();
+    const isOwner = member.id === profile?.uid;
+    const isCoordinator = allTeam.find(m => m.id === profile?.uid)?.isCoordinator;
+    const canEdit = isOwner || isCoordinator || adminEditMode;
 
     React.useEffect(() => {
         if (!isFocused) {
@@ -20,6 +23,10 @@ const TeamMemberInput: React.FC<{ member: TeamMember, updateTeamMembers: (member
     }, [member.name, isFocused]);
 
     const handleSave = () => {
+        if (!canEdit) {
+            setName(member.name); // Reset if someone tries to hacky edit
+            return;
+        }
         if (name !== member.name) {
             const updated = allTeam.map(m => m.id === member.id ? { ...m, name: name } : m);
             updateTeamMembers(updated);
@@ -30,11 +37,12 @@ const TeamMemberInput: React.FC<{ member: TeamMember, updateTeamMembers: (member
         <input 
             type="text"
             value={name}
+            disabled={!canEdit}
             onChange={(e) => setName(e.target.value)}
             onFocus={() => setIsFocused(true)}
             onBlur={() => { setIsFocused(false); handleSave(); }}
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-            className={`bg-transparent outline-none border-b border-transparent hover:border-gray-300 focus:border-green-500 w-full ${member.isCoordinator ? "font-bold text-green-800" : "text-gray-700"} ${member.id === profile?.uid ? "text-blue-600 font-bold" : ""}`}                
+            className={`bg-transparent outline-none border-b border-transparent ${canEdit ? 'hover:border-gray-300 focus:border-green-500' : 'cursor-not-allowed'} w-full ${member.isCoordinator ? "font-bold text-green-800" : "text-gray-700"} ${member.id === profile?.uid ? "text-blue-600 font-bold" : ""}`}                
         />
     );
 };
