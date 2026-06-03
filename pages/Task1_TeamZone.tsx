@@ -2,14 +2,17 @@ import React, { useState } from 'react';
 import { resizeImage } from '../lib/imageResizer';
 import { ZONES } from '../constants';
 import { useProject } from '../context/ProjectContext';
+import { useAuth } from '../context/AuthContext';
 import { TeamMember } from '../types';
+import { db, updateDoc, doc, OperationType, handleFirestoreError } from '../firebase';
 import { CheckCircle, FileText, UserPlus, Trash, Printer, Eye, EyeOff, Upload, Image as ImageIcon, Users, Lock, Unlock, ChevronDown, ChevronUp, Lightbulb, Info } from 'lucide-react';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-const TeamMemberInput: React.FC<{ member: TeamMember, updateTeamMembers: (members: TeamMember[]) => void, allTeam: TeamMember[] }> = ({ member, updateTeamMembers, allTeam }) => {
+const TeamMemberInput: React.FC<{ member: TeamMember, updateTeamMembers: (members: TeamMember[]) => void, allTeam: TeamMember[], projectId: string | undefined }> = ({ member, updateTeamMembers, allTeam, projectId }) => {
     const [name, setName] = useState(member.name);
     const [isFocused, setIsFocused] = useState(false);
+    const { profile } = useAuth();
 
     React.useEffect(() => {
         if (!isFocused) {
@@ -17,10 +20,18 @@ const TeamMemberInput: React.FC<{ member: TeamMember, updateTeamMembers: (member
         }
     }, [member.name, isFocused]);
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (name !== member.name) {
             const updated = allTeam.map(m => m.id === member.id ? { ...m, name: name } : m);
             updateTeamMembers(updated);
+            
+            if (projectId) {
+                try {
+                    await updateDoc(doc(db, 'projects', projectId), { team: updated });
+                } catch (err) {
+                    handleFirestoreError(err, OperationType.UPDATE, `projects/${projectId}`);
+                }
+            }
         }
     };
 
@@ -32,7 +43,7 @@ const TeamMemberInput: React.FC<{ member: TeamMember, updateTeamMembers: (member
             onFocus={() => setIsFocused(true)}
             onBlur={() => { setIsFocused(false); handleSave(); }}
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-            className={`bg-transparent outline-none border-b border-transparent hover:border-gray-300 focus:border-green-500 w-full ${member.isCoordinator ? "font-bold text-green-800" : "text-gray-700"}`}                
+            className={`bg-transparent outline-none border-b border-transparent hover:border-gray-300 focus:border-green-500 w-full ${member.isCoordinator ? "font-bold text-green-800" : "text-gray-700"} ${member.id === profile?.uid ? "text-blue-600 font-bold" : ""}`}                
         />
     );
 };
@@ -49,6 +60,7 @@ export const Task1_TeamZone: React.FC = () => {
     assignTask,
     toggleTeamLock
   } = useProject();
+  const { profile } = useAuth();
   const [activeTab, setActiveTab] = useState<'instructions' | 'development' | 'distribution' | 'deliverable'>('instructions');
   const [newMemberName, setNewMemberName] = useState('');
   const [schoolName, setSchoolName] = useState(state.schoolName);
@@ -499,7 +511,7 @@ export const Task1_TeamZone: React.FC = () => {
                                         onChange={() => setCoordinator(member.id)}
                                         className="w-4 h-4 text-green-600 focus:ring-green-500 cursor-pointer"
                                     />
-                                    <TeamMemberInput member={member} updateTeamMembers={updateTeamMembers} allTeam={state.team} />
+                                    <TeamMemberInput member={member} updateTeamMembers={updateTeamMembers} allTeam={state.team} projectId={profile?.projectId} />
                                     {member.isCoordinator && (
                                         <span className="text-xs font-bold text-green-600 uppercase tracking-widest whitespace-nowrap">
                                             (Coord.)
