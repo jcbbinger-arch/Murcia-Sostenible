@@ -7,13 +7,16 @@ export const DashboardSettings: React.FC = () => {
     const { state, updateSchoolSettings, updateImage } = useProject();
     const [name, setName] = useState(state.schoolName);
     const [year, setYear] = useState(state.academicYear);
+    const [isFocused, setIsFocused] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
     // Sync local state if context changes (e.g., from another device/user)
     React.useEffect(() => {
-        setName(state.schoolName);
-        setYear(state.academicYear);
-    }, [state.schoolName, state.academicYear]);
+        if (!isFocused) {
+            setName(state.schoolName);
+            setYear(state.academicYear);
+        }
+    }, [state.schoolName, state.academicYear, isFocused]);
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -46,7 +49,8 @@ export const DashboardSettings: React.FC = () => {
                       type="text" 
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      onBlur={handleSave}
+                      onFocus={() => setIsFocused(true)}
+                      onBlur={() => { setIsFocused(false); handleSave(); }}
                       className="w-full p-4 rounded-2xl border-2 border-slate-100 focus:border-emerald-500 outline-none font-bold text-slate-700"
                   />
                 </div>
@@ -56,7 +60,8 @@ export const DashboardSettings: React.FC = () => {
                       type="text" 
                       value={year}
                       onChange={(e) => setYear(e.target.value)}
-                      onBlur={handleSave}
+                      onFocus={() => setIsFocused(true)}
+                      onBlur={() => { setIsFocused(false); handleSave(); }}
                       className="w-full p-4 rounded-2xl border-2 border-slate-100 focus:border-emerald-500 outline-none font-bold text-slate-700"
                   />
                 </div>

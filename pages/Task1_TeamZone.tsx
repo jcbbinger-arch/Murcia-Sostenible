@@ -9,6 +9,13 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 
 const TeamMemberInput: React.FC<{ member: TeamMember, updateTeamMembers: (members: TeamMember[]) => void, allTeam: TeamMember[] }> = ({ member, updateTeamMembers, allTeam }) => {
     const [name, setName] = useState(member.name);
+    const [isFocused, setIsFocused] = useState(false);
+
+    React.useEffect(() => {
+        if (!isFocused) {
+            setName(member.name);
+        }
+    }, [member.name, isFocused]);
 
     const handleSave = () => {
         if (name !== member.name) {
@@ -22,7 +29,8 @@ const TeamMemberInput: React.FC<{ member: TeamMember, updateTeamMembers: (member
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            onBlur={handleSave}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => { setIsFocused(false); handleSave(); }}
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
             className={`bg-transparent outline-none border-b border-transparent hover:border-gray-300 focus:border-green-500 w-full ${member.isCoordinator ? "font-bold text-green-800" : "text-gray-700"}`}                
         />
@@ -47,16 +55,17 @@ export const Task1_TeamZone: React.FC = () => {
   const [academicYear, setAcademicYear] = useState(state.academicYear);
   const [teamName, setTeamName] = useState(state.teamName);
   const [zoneJustification, setZoneJustification] = useState(state.zoneJustification);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
   const [expandedZoneId, setExpandedZoneId] = useState<number | null>(null);
   const [expandedDistTaskId, setExpandedDistTaskId] = useState<number | null>(null);
 
   // Sync with context changes
   React.useEffect(() => {
-    setSchoolName(state.schoolName);
-    setAcademicYear(state.academicYear);
-    setTeamName(state.teamName);
-    setZoneJustification(state.zoneJustification);
-  }, [state.schoolName, state.academicYear, state.teamName, state.zoneJustification]);
+    if (focusedField !== 'schoolName') setSchoolName(state.schoolName);
+    if (focusedField !== 'academicYear') setAcademicYear(state.academicYear);
+    if (focusedField !== 'teamName') setTeamName(state.teamName);
+    if (focusedField !== 'zoneJustification') setZoneJustification(state.zoneJustification);
+  }, [state.schoolName, state.academicYear, state.teamName, state.zoneJustification, focusedField]);
 
   const getTaskCount = (memberId: string) => state.task2.tasks.filter(t => t.assignedToId === memberId).length;
 
@@ -347,7 +356,8 @@ export const Task1_TeamZone: React.FC = () => {
                             type="text" 
                             value={schoolName}
                             onChange={(e) => setSchoolName(e.target.value)}
-                            onBlur={() => updateSchoolSettings(schoolName, academicYear)}
+                            onFocus={() => setFocusedField('schoolName')}
+                            onBlur={() => { setFocusedField(null); updateSchoolSettings(schoolName, academicYear); }}
                             className="w-full p-2 border border-gray-300 rounded"
                         />
                     </div>
@@ -357,7 +367,8 @@ export const Task1_TeamZone: React.FC = () => {
                             type="text" 
                             value={academicYear}
                             onChange={(e) => setAcademicYear(e.target.value)}
-                            onBlur={() => updateSchoolSettings(schoolName, academicYear)}
+                            onFocus={() => setFocusedField('academicYear')}
+                            onBlur={() => { setFocusedField(null); updateSchoolSettings(schoolName, academicYear); }}
                             className="w-full p-2 border border-gray-300 rounded"
                         />
                     </div>
@@ -433,7 +444,8 @@ export const Task1_TeamZone: React.FC = () => {
                             type="text" 
                             value={teamName}
                             onChange={(e) => setTeamName(e.target.value)}
-                            onBlur={() => updateTeamName(teamName)}
+                            onFocus={() => setFocusedField('teamName')}
+                            onBlur={() => { setFocusedField(null); updateTeamName(teamName); }}
                             placeholder="Ej: Los Innovadores del Sabor"
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                         />
@@ -570,7 +582,8 @@ export const Task1_TeamZone: React.FC = () => {
                 <textarea 
                     value={zoneJustification}
                     onChange={(e) => setZoneJustification(e.target.value)}
-                    onBlur={() => updateZoneJustification(zoneJustification)}
+                    onFocus={() => setFocusedField('zoneJustification')}
+                    onBlur={() => { setFocusedField(null); updateZoneJustification(zoneJustification); }}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 h-24"
                     placeholder="Ej: Hemos elegido el Mar Menor porque nos apasiona la cocina marinera..."
                 />
