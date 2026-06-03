@@ -7,6 +7,7 @@ import { ArrowRight, Upload, FileText, User, LogIn, Download, Hash, Copy, CheckC
 import { ChecklistStatus } from '../types';
 import { db, doc, updateDoc, OperationType, handleFirestoreError } from '../firebase';
 import { TeamPanel } from '../components/TeamPanel';
+import { DashboardSettings } from '../components/DashboardSettings';
 
 export const Dashboard: React.FC = () => {
   const { state, setCurrentUser, claimTeamMember, joinTeamAsNewMember, updateChecklistItem, updateTeamMembers } = useProject();
@@ -342,6 +343,7 @@ export const Dashboard: React.FC = () => {
           </div>
       </div>
 
+      <DashboardSettings />
       <TeamPanel members={state.team} />
 
       {/* Progress Checklist Section */}

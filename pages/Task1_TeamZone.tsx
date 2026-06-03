@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { resizeImage } from '../lib/imageResizer';
 import { ZONES } from '../constants';
 import { useProject } from '../context/ProjectContext';
 import { TeamMember } from '../types';
@@ -62,14 +63,15 @@ export const Task1_TeamZone: React.FC = () => {
     setExpandedZoneId(expandedZoneId === id ? null : id);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'schoolLogo' | 'groupPhoto') => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'schoolLogo' | 'groupPhoto') => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        updateImage(type, reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const resized = await resizeImage(file, 400, 400);
+        updateImage(type, resized);
+      } catch (err) {
+        console.error("Error resizing image:", err);
+      }
     }
   };
 
