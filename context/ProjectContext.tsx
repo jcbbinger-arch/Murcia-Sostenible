@@ -40,6 +40,7 @@ interface ProjectContextType {
   updateDish: (dish: Dish) => void;
   updateMenuPrototype: (data: Partial<MenuPrototype>) => void;
   updateTask6Roles: (roles: Partial<Task6Roles>) => void;
+  updateMemberPresentation: (memberId: string, link: string, hasMenu: boolean) => void;
   updateSeasonalProducts: (data: Partial<SeasonalProductContribution>) => void;
   updateInterimReport: (data: any) => void;
   updateCoEvaluationPoints: (points: number) => void;
@@ -492,6 +493,13 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     });
   };
 
+  const updateMemberPresentation = (memberId: string, link: string, hasMenu: boolean) => {
+    setState(prev => ({
+        ...prev,
+        team: prev.team.map(m => m.id === memberId ? { ...m, presentationLink: link, hasPhysicalMenu: hasMenu } : m)
+    }));
+  };
+
   const savePeerReview = async (review: PeerReview) => {
     setState(prev => {
       if (review.evaluatorId !== prev.currentUser) return prev;
@@ -553,7 +561,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       state, loading, setCurrentUser, createProject, joinProject, claimTeamMember, joinTeamAsNewMember, updateSchoolSettings, updateImage,
       updateTeamName, updateTeamMembers, selectZone, updateZoneJustification, assignTask, updateTaskContent,
       updateConcept, updateMission, addDish, removeDish, updateDish, updateMenuPrototype, updateTask6Roles,
-      updateSeasonalProducts, updateInterimReport, updateCoEvaluationPoints, savePeerReview, updateChecklistItem, toggleTeamLock, resetProject, persistChanges 
+      updateMemberPresentation, updateSeasonalProducts, updateInterimReport, updateCoEvaluationPoints, savePeerReview, updateChecklistItem, toggleTeamLock, resetProject, persistChanges 
     }}>
       {children}
     </ProjectContext.Provider>

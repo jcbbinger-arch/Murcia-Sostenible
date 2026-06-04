@@ -5,7 +5,7 @@ import { Palette, Hammer, BookOpen, Lock, UserCheck, Eye, ExternalLink } from 'l
 import { SaveButton } from '../components/SaveButton';
 
 export const Task6_FinalAssembly: React.FC = () => {
-  const { state, updateTask6Roles } = useProject();
+  const { state, updateTask6Roles, updateMemberPresentation } = useProject();
   const [activeTab, setActiveTab] = useState<'instructions' | 'roles' | 'supervision'>('instructions');
 
   // PERMISOS
@@ -58,22 +58,39 @@ export const Task6_FinalAssembly: React.FC = () => {
 
       {activeTab === 'instructions' && (
         <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200 prose max-w-none text-gray-700">
-            <h3 className="text-2xl font-bold text-gray-800 border-b pb-4 mb-6">Guía de la Tarea 8</h3>
-            <p>Es el momento de pulir el proyecto hasta el último detalle. Con los precios definidos, vais a crear la versión definitiva.</p>
+            <h3 className="text-2xl font-bold text-gray-800 border-b pb-4 mb-6">Guía de la Tarea 8 (Modificada)</h3>
+            <p>Es el momento de pulir el proyecto. Esta fase incluye la defensa individual.</p>
             
-            <div className="grid md:grid-cols-3 gap-6 mt-6">
-                <div className="bg-purple-50 p-4 rounded border border-purple-200">
-                    <h4 className="font-bold text-purple-900 flex items-center gap-2"><Palette size={18}/> Misión 8.A: Diseñador</h4>
-                    <p className="text-sm">Actualizar la carta virtual (Canva) con los precios definitivos. Generar el QR final.</p>
-                </div>
-                <div className="bg-orange-50 p-4 rounded border border-orange-200">
-                    <h4 className="font-bold text-orange-900 flex items-center gap-2"><Hammer size={18}/> Misión 8.B: Artesano</h4>
-                    <p className="text-sm">Construir la maqueta física definitiva integrando el feedback y el QR.</p>
-                </div>
-                <div className="bg-blue-50 p-4 rounded border border-blue-200">
-                    <h4 className="font-bold text-blue-900 flex items-center gap-2"><BookOpen size={18}/> Misión 8.C: Editor</h4>
-                    <p className="text-sm">Ensamblar la Memoria Final (PDF), añadiendo conclusiones y revisando todo.</p>
-                </div>
+            <div className="mt-8 bg-blue-50 p-6 rounded-xl border border-blue-200">
+                <h4 className="font-bold text-blue-900 text-lg mb-4">📢 Defensa Individual</h4>
+                <ul className="list-disc pl-5 space-y-2 text-sm">
+                    <li>Cada miembro debe preparar su <strong>presentación individual</strong> sobre el proyecto grupal.</li>
+                    <li>Sube el <strong>enlace</strong> a tu presentación personal aquí abajo.</li>
+                    <li>Debes llevar la <strong>carta física</strong> (el prototipo de menú impreso) el día de la presentación.</li>
+                </ul>
+            </div>
+
+            <div className="mt-8">
+                <h4 className="font-bold text-gray-800 mb-4">Mis Entregas Individuales</h4>
+                {currentUserMember && (
+                    <div className="space-y-4">
+                        <input
+                            type="text"
+                            placeholder="Enlace a tu presentación (Drive, Canva, Genially...)"
+                            className="w-full border rounded p-2 text-sm"
+                            value={currentUserMember.presentationLink || ''}
+                            onChange={(e) => updateMemberPresentation(currentUserMember.id, e.target.value, currentUserMember.hasPhysicalMenu || false)}
+                        />
+                        <label className="flex items-center gap-2 text-sm">
+                            <input
+                                type="checkbox"
+                                checked={!!currentUserMember.hasPhysicalMenu}
+                                onChange={(e) => updateMemberPresentation(currentUserMember.id, currentUserMember.presentationLink || '', e.target.checked)}
+                            />
+                            Tengo lista la carta física para llevarla a la presentación.
+                        </label>
+                    </div>
+                )}
             </div>
             
             <div className="mt-8">

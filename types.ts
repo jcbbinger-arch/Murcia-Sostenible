@@ -54,6 +54,8 @@ export interface TeamMember {
   id: string;
   name: string;
   isCoordinator: boolean;
+  presentationLink?: string;
+  hasPhysicalMenu?: boolean;
 }
 
 export interface MicroTask {
