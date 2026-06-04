@@ -204,6 +204,9 @@ export interface ProjectState {
   isTeamClosed?: boolean;
   seasonalProducts: SeasonalProductContribution[];
   
+  // --- NUEVA CONFIGURACIÓN ---
+  coEvaluationPoints: number;
+
   // New: Store all reviews
   coEvaluations: PeerReview[];
 

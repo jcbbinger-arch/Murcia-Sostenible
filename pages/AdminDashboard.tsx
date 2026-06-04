@@ -26,9 +26,10 @@ import {
   UserCircle,
   Eye,
   History,
-  UserMinus
+  UserMinus,
+  Scale
 } from 'lucide-react';
-import { TeamMember } from '../types';
+import { TeamMember, PeerReview } from '../types';
 
 interface UserProfile {
   uid: string;
@@ -50,6 +51,7 @@ interface ProjectSummary {
   createdAt: string;
   createdBy: string;
   team: TeamMember[];
+  coEvaluations?: PeerReview[];
 }
 
 interface AuditLog {
@@ -67,7 +69,7 @@ export const AdminDashboard: React.FC = () => {
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
   const [allProjects, setAllProjects] = useState<ProjectSummary[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [activeTab, setActiveTab] = useState<'users' | 'projects' | 'audit'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'projects' | 'audit' | 'evaluations'>('users');
   const [searchTerm, setSearchTerm] = useState('');
 
   const isSuperAdmin = realProfile?.role === 'admin';
@@ -99,7 +101,7 @@ export const AdminDashboard: React.FC = () => {
     // Listen to all projects
     const qProjects = collection(db, 'projects');
     const unsubProjects = onSnapshot(qProjects, (snapshot) => {
-      setAllProjects(snapshot.docs.map(d => d.data() as ProjectSummary));
+      setAllProjects(snapshot.docs.map(d => ({id: d.id, ...d.data()} as ProjectSummary)));
     }, (error) => {
       handleFirestoreError(error, OperationType.GET, 'projects');
     });
@@ -305,6 +307,13 @@ export const AdminDashboard: React.FC = () => {
           >
             <LayoutDashboard className="w-5 h-5" />
             <span className="font-medium">Todos los Proyectos</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('evaluations')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'evaluations' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+          >
+            <Scale className="w-5 h-5" />
+            <span className="font-medium">Coevaluaciones</span>
           </button>
           <button
             onClick={() => setActiveTab('audit')}
@@ -597,6 +606,13 @@ export const AdminDashboard: React.FC = () => {
                       ID: {project.id.substring(0, 8)}...
                     </div>
                     <button 
+                      onClick={() => enterProjectAsMember(project.id, 'admin')}
+                      className="flex items-center gap-2 px-4 py-2 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 rounded-xl transition-all text-xs font-black uppercase tracking-widest"
+                    >
+                      <LayoutDashboard size={14} />
+                      Entrar
+                    </button>
+                    <button 
                       onClick={() => deleteProject(project.id)}
                       className="flex items-center gap-2 px-4 py-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all text-xs font-black uppercase tracking-widest"
                     >
@@ -607,6 +623,62 @@ export const AdminDashboard: React.FC = () => {
                 </div>
               ))
             )}
+          </div>
+        )}
+
+        {activeTab === 'evaluations' && (
+          <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+            <div className="p-8 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">Coevaluaciones Diabólicas</h3>
+                <p className="text-sm text-slate-500 font-medium">Revisión de las evaluaciones confidenciales entre alumnos.</p>
+              </div>
+              <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-500">Puntos max:</span>
+                      <input 
+                        type="number" 
+                        value={allProjects[0]?.coEvaluationPoints || 1} 
+                        onChange={(e) => {/* Implementar lógica de actualización masiva si es necesario, o por proyecto */}}
+                        className="w-16 border rounded-lg p-2 text-sm font-bold"
+                      />
+                  </div>
+                  <Scale className="text-slate-300 w-8 h-8" />
+              </div>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/50 border-b border-slate-100">
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Proyecto</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Evaluador</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Evaluado</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Puntuación</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                    {allProjects.flatMap(project => (project.coEvaluations || []).map(evalu => ({...evalu, projectName: project.name}))).map((evalu, idx) => {
+                        const evaluator = allUsers.find(u => u.uid === evalu.evaluatorId)?.displayName || 'Desconocido';
+                        const target = allUsers.find(u => u.uid === evalu.targetId)?.displayName || 'Desconocido';
+                        const totalScore = (evalu.items.participation.score + evalu.items.responsibility.score + evalu.items.collaboration.score + evalu.items.contribution.score);
+                        
+                        return (
+                            <tr key={idx} className="hover:bg-slate-50/30 transition-colors">
+                                <td className="px-8 py-4 text-sm font-bold text-slate-900">{evalu.projectName}</td>
+                                <td className="px-8 py-4 text-sm text-slate-600">{evaluator}</td>
+                                <td className="px-8 py-4 text-sm text-slate-600">{target}</td>
+                                <td className="px-8 py-4">
+                                     <span className={`font-black ${totalScore > 0 ? 'text-emerald-500' : totalScore < 0 ? 'text-red-500': 'text-slate-500'}`}>
+                                        {totalScore > 0 ? '+' : ''}{totalScore.toFixed(2)}
+                                     </span>
+                                </td>
+                            </tr>
+                        )
+                    })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 

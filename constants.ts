@@ -192,7 +192,7 @@ export const INITIAL_MICRO_TASKS: MicroTask[] = [
       title: 'Benchmarking Innovación', 
       description: 'Buscar inspiración en restaurantes sostenibles referentes para replicar buenas ideas.', 
       guidelines: [
-        'Investigar restaurantes con Estrella Verde Michelin o proyectos de restauración circular.',
+        'Investigar restaurantes con proyectos de restauración circular.',
         'Analizar técnicas originales: aprovechamiento total, conservación ancestral, sin huella de carbono.',
         'Adaptar 3 ideas innovadoras detectadas al proyecto local.'
       ],
@@ -286,6 +286,7 @@ export const INITIAL_STATE: ProjectState = {
   team: [],
   isTeamClosed: false,
   seasonalProducts: [],
+  coEvaluationPoints: 1,
   coEvaluations: [],
   interimReport: {
     summary: '',

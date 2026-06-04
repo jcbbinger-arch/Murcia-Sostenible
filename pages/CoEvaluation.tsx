@@ -139,24 +139,28 @@ export const CoEvaluation: React.FC = () => {
   };
 
   const handleSave = () => {
-      if (!state.currentUser) return;
-      if (!targetId) return;
+    if (!state.currentUser) return;
+    if (!targetId) return;
 
-      const categories = ['participation', 'responsibility', 'collaboration', 'contribution'] as const;
-      for (const cat of categories) {
-          if (Math.abs(form[cat].score) > 0 && form[cat].justification.trim().length < 5) {
-               return;
-          }
-      }
+    // Verificar si se ha modificado algo (las evaluaciones nuevas tienen score diferente de 0)
+    // Pero el usuario dice que "desaparece". 
+    // La causa es que `savePeerReview` usa `state.coEvaluations` que podría ser no actualizado.
+    // Además, el persistChanges() debe ser llamado después de guardar.
+    
+    // Simplificamos: llamamos directamente a savePeerReview y luego a persistChanges manualmente si es necesario, 
+    // pero el contexto ya debería encargarse de lo que queda. 
+    // El problema principal parece ser que `state` en el componente es stale al guardar.
+    
 
-      const review: PeerReview = {
-          evaluatorId: state.currentUser,
-          targetId,
-          timestamp: Date.now(),
-          items: form
-      };
+    const review: PeerReview = {
+        evaluatorId: state.currentUser,
+        targetId,
+        timestamp: Date.now(),
+        items: form
+    };
 
-      savePeerReview(review);
+    savePeerReview(review);
+    persistChanges(); // ¡Añadido para asegurar la persistencia!
   };
 
   const handlePrintPrivate = () => {

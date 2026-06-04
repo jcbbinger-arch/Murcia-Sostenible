@@ -42,6 +42,7 @@ interface ProjectContextType {
   updateTask6Roles: (roles: Partial<Task6Roles>) => void;
   updateSeasonalProducts: (data: Partial<SeasonalProductContribution>) => void;
   updateInterimReport: (data: any) => void;
+  updateCoEvaluationPoints: (points: number) => void;
   savePeerReview: (review: PeerReview) => void;
   updateChecklistItem: (id: string, status: ChecklistStatus) => void;
   toggleTeamLock: () => void;
@@ -90,6 +91,7 @@ const sanitizeState = (loadedData: any): ProjectState => {
         dishes: Array.isArray(loadedData.dishes) ? loadedData.dishes : [],
         seasonalProducts: Array.isArray(loadedData.seasonalProducts) ? loadedData.seasonalProducts : [],
         coEvaluations: Array.isArray(loadedData.coEvaluations) ? loadedData.coEvaluations : [],
+        coEvaluationPoints: loadedData.coEvaluationPoints || 1,
         
         interimReport: {
             ...INITIAL_STATE.interimReport,
@@ -497,6 +499,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     });
   };
 
+  const updateCoEvaluationPoints = (points: number) => {
+    setState(prev => ({ ...prev, coEvaluationPoints: points }));
+  };
+
   const updateChecklistItem = async (id: string, status: ChecklistStatus) => {
     setState(prev => ({
       ...prev,
@@ -547,7 +553,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       state, loading, setCurrentUser, createProject, joinProject, claimTeamMember, joinTeamAsNewMember, updateSchoolSettings, updateImage,
       updateTeamName, updateTeamMembers, selectZone, updateZoneJustification, assignTask, updateTaskContent,
       updateConcept, updateMission, addDish, removeDish, updateDish, updateMenuPrototype, updateTask6Roles,
-      updateSeasonalProducts, updateInterimReport, savePeerReview, updateChecklistItem, toggleTeamLock, resetProject, persistChanges 
+      updateSeasonalProducts, updateInterimReport, updateCoEvaluationPoints, savePeerReview, updateChecklistItem, toggleTeamLock, resetProject, persistChanges 
     }}>
       {children}
     </ProjectContext.Provider>
