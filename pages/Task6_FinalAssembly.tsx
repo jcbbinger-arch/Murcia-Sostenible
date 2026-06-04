@@ -79,16 +79,31 @@ export const Task6_FinalAssembly: React.FC = () => {
                             placeholder="Enlace a tu presentación (Drive, Canva, Genially...)"
                             className="w-full border rounded p-2 text-sm"
                             value={currentUserMember.presentationLink || ''}
-                            onChange={(e) => updateMemberPresentation(currentUserMember.id, e.target.value, currentUserMember.hasPhysicalMenu || false)}
+                            onChange={(e) => updateMemberPresentation(currentUserMember.id, e.target.value, currentUserMember.hasPhysicalMenu || false, currentUserMember.physicalMenuImage || null)}
                         />
                         <label className="flex items-center gap-2 text-sm">
                             <input
                                 type="checkbox"
                                 checked={!!currentUserMember.hasPhysicalMenu}
-                                onChange={(e) => updateMemberPresentation(currentUserMember.id, currentUserMember.presentationLink || '', e.target.checked)}
+                                onChange={(e) => updateMemberPresentation(currentUserMember.id, currentUserMember.presentationLink || '', e.target.checked, currentUserMember.physicalMenuImage || null)}
                             />
                             Tengo lista la carta física para llevarla a la presentación.
                         </label>
+                        <div className="mt-2 text-sm">
+                            <label className="block text-gray-600 mb-1">Subir foto de la carta física:</label>
+                            <input type="file" accept="image/*" onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                const reader = new FileReader();
+                                reader.onloadend = () => {
+                                    updateMemberPresentation(currentUserMember.id, currentUserMember.presentationLink || '', !!currentUserMember.hasPhysicalMenu, reader.result as string);
+                                };
+                                reader.readAsDataURL(file);
+                            }} />
+                            {currentUserMember.physicalMenuImage && (
+                                <img src={currentUserMember.physicalMenuImage} className="mt-2 w-32 h-32 object-cover rounded border" alt="Carta física" />
+                            )}
+                        </div>
                     </div>
                 )}
             </div>

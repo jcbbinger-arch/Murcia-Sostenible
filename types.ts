@@ -56,6 +56,7 @@ export interface TeamMember {
   isCoordinator: boolean;
   presentationLink?: string;
   hasPhysicalMenu?: boolean;
+  physicalMenuImage?: string | null; // Base64
 }
 
 export interface MicroTask {

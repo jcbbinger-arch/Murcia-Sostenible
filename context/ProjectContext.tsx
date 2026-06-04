@@ -40,7 +40,7 @@ interface ProjectContextType {
   updateDish: (dish: Dish) => void;
   updateMenuPrototype: (data: Partial<MenuPrototype>) => void;
   updateTask6Roles: (roles: Partial<Task6Roles>) => void;
-  updateMemberPresentation: (memberId: string, link: string, hasMenu: boolean) => void;
+  updateMemberPresentation: (memberId: string, link: string, hasMenu: boolean, image: string | null) => void;
   updateSeasonalProducts: (data: Partial<SeasonalProductContribution>) => void;
   updateInterimReport: (data: any) => void;
   updateCoEvaluationPoints: (points: number) => void;
@@ -493,10 +493,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     });
   };
 
-  const updateMemberPresentation = (memberId: string, link: string, hasMenu: boolean) => {
+  const updateMemberPresentation = (memberId: string, link: string, hasMenu: boolean, image: string | null) => {
     setState(prev => ({
         ...prev,
-        team: prev.team.map(m => m.id === memberId ? { ...m, presentationLink: link, hasPhysicalMenu: hasMenu } : m)
+        team: prev.team.map(m => m.id === memberId ? { ...m, presentationLink: link, hasPhysicalMenu: hasMenu, physicalMenuImage: image } : m)
     }));
   };
 
