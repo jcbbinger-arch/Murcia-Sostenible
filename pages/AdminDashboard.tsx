@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { db, collection, query, where, onSnapshot, updateDoc, doc, getDocs, deleteDoc, handleFirestoreError, OperationType, logAction } from '../firebase';
 import { useAuth } from '../context/AuthContext';
+import { CoEvaluationsView } from '../components/CoEvaluationsView';
 import { 
   Users, 
   CheckCircle, 
@@ -628,62 +629,7 @@ export const AdminDashboard: React.FC = () => {
         )}
 
         {activeTab === 'evaluations' && (
-          <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
-            <div className="p-8 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-black text-slate-900 tracking-tight">Coevaluaciones Diabólicas</h3>
-                <p className="text-sm text-slate-500 font-medium">Revisión de las evaluaciones confidenciales entre alumnos.</p>
-              </div>
-              <Scale className="text-slate-300 w-8 h-8" />
-            </div>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/50 border-b border-slate-100">
-                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Proyecto</th>
-                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Puntos Max</th>
-                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Evaluador</th>
-                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Evaluado</th>
-                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Puntuación</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                    {allProjects.flatMap(project => (project.coEvaluations || []).map(evalu => ({...evalu, projectName: project.name, projectId: project.id, projectPoints: project.coEvaluationPoints || 1}))).map((evalu, idx) => {
-                        const evaluator = allUsers.find(u => u.uid === evalu.evaluatorId)?.displayName || 'Desconocido';
-                        const target = allUsers.find(u => u.uid === evalu.targetId)?.displayName || 'Desconocido';
-                        const totalScore = (evalu.items.participation.score + evalu.items.responsibility.score + evalu.items.collaboration.score + evalu.items.contribution.score);
-                        
-                        return (
-                            <tr key={idx} className="hover:bg-slate-50/30 transition-colors">
-                                <td className="px-8 py-4 text-sm font-bold text-slate-900">{evalu.projectName}</td>
-                                <td className="px-8 py-4">
-                                     <input 
-                                        type="number" 
-                                        defaultValue={evalu.projectPoints}
-                                        onBlur={(e) => {
-                                            const val = parseFloat(e.target.value);
-                                            if (!isNaN(val)) {
-                                                updateDoc(doc(db, 'projects', evalu.projectId), { coEvaluationPoints: val });
-                                            }
-                                        }}
-                                        className="w-16 border rounded-lg p-2 text-sm font-bold"
-                                      />
-                                </td>
-                                <td className="px-8 py-4 text-sm text-slate-600">{evaluator}</td>
-                                <td className="px-8 py-4 text-sm text-slate-600">{target}</td>
-                                <td className="px-8 py-4">
-                                     <span className={`font-black ${totalScore > 0 ? 'text-emerald-500' : totalScore < 0 ? 'text-red-500': 'text-slate-500'}`}>
-                                        {totalScore > 0 ? '+' : ''}{totalScore.toFixed(2)}
-                                     </span>
-                                </td>
-                            </tr>
-                        )
-                    })}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <CoEvaluationsView projects={allProjects} users={allUsers} />
         )}
 
         {activeTab === 'audit' && (
