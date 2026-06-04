@@ -247,11 +247,22 @@ export const ALLERGENS = [
     { id: 'molluscs', name: 'Moluscos', icon: '🐙' }
 ];
 
+export const getCurrentAcademicYear = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  // Month index: Jan=0, Aug=7, Sep=8
+  if (now.getMonth() < 8) {
+    return `${year - 1}/${year.toString().slice(-2)}`;
+  } else {
+    return `${year}/${(year + 1).toString().slice(-2)}`;
+  }
+};
+
 export const INITIAL_STATE: ProjectState = {
   currentUser: null,
   schoolName: 'C.I.F.P. de Hostelería y Turismo',
   schoolLogo: null,
-  academicYear: '2025/26',
+  academicYear: getCurrentAcademicYear(),
   teamName: '',
   groupPhoto: null,
   selectedZone: null,

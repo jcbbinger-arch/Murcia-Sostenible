@@ -10,6 +10,7 @@ interface RubricRowProps {
     description: string;
     score: number;
     justification: string;
+    maxPoints: number;
     onUpdate: (category: 'participation' | 'responsibility' | 'collaboration' | 'contribution', field: 'score' | 'justification', value: any) => void;
 }
 
@@ -18,7 +19,8 @@ const RubricRow: React.FC<RubricRowProps> = ({
     title, 
     description,
     score, 
-    justification, 
+    justification,
+    maxPoints,
     onUpdate 
 }) => {
     // Helper para visualizar el color según la puntuación
@@ -40,14 +42,14 @@ const RubricRow: React.FC<RubricRowProps> = ({
             
             <div className="ml-2 mr-2 mb-6">
                 <div className="flex justify-between text-xs font-bold uppercase text-gray-400 mb-2">
-                    <span className="text-red-500">Negativo (-0.25)</span>
+                    <span className="text-red-500">Negativo (-{maxPoints.toFixed(2)})</span>
                     <span className="text-gray-500">Neutro (0)</span>
-                    <span className="text-green-500">Positivo (+0.25)</span>
+                    <span className="text-green-500">Positivo (+{maxPoints.toFixed(2)})</span>
                 </div>
                 <input 
                     type="range" 
-                    min="-0.25" 
-                    max="0.25" 
+                    min={-maxPoints}
+                    max={maxPoints}
                     step="0.01" 
                     value={score}
                     onChange={(e) => onUpdate(category, 'score', parseFloat(e.target.value))}
@@ -77,7 +79,7 @@ const RubricRow: React.FC<RubricRowProps> = ({
 };
 
 export const CoEvaluation: React.FC = () => {
-  const { state, savePeerReview } = useProject();
+  const { state, savePeerReview, persistChanges } = useProject();
   const [targetId, setTargetId] = useState<string>('');
 
   const emptyItem: RubricItem = { score: 0, justification: '' };
@@ -257,6 +259,7 @@ export const CoEvaluation: React.FC = () => {
                     description="Asistencia, aportación de ideas, discusiones constructivas."
                     score={form.participation.score}
                     justification={form.participation.justification}
+                    maxPoints={state.coEvaluationPoints}
                     onUpdate={updateItem}
                 />
                 <RubricRow 
@@ -265,6 +268,7 @@ export const CoEvaluation: React.FC = () => {
                     description="Cumplimiento de plazos, calidad del trabajo individual, autonomía."
                     score={form.responsibility.score}
                     justification={form.responsibility.justification}
+                    maxPoints={state.coEvaluationPoints}
                     onUpdate={updateItem}
                 />
                 <RubricRow 
@@ -273,6 +277,7 @@ export const CoEvaluation: React.FC = () => {
                     description="Ayuda a compañeros, resolución de conflictos, actitud positiva."
                     score={form.collaboration.score}
                     justification={form.collaboration.justification}
+                    maxPoints={state.coEvaluationPoints}
                     onUpdate={updateItem}
                 />
                 <RubricRow 
@@ -281,6 +286,7 @@ export const CoEvaluation: React.FC = () => {
                     description="Valor real de su trabajo para el éxito del proyecto."
                     score={form.contribution.score}
                     justification={form.contribution.justification}
+                    maxPoints={state.coEvaluationPoints}
                     onUpdate={updateItem}
                 />
 
